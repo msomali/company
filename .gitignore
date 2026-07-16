@@ -2,3 +2,12 @@ AGENTS.md
 .secrets/
 AGENTS.md
 .secrets/
+HEARTBEAT.md
+IDENTITY.md
+SOUL.md
+TOOLS.md
+USER.md
+BOOTSTRAP.md
+MEMORY.md
+memory/
+openclaw-workspace-state.json
