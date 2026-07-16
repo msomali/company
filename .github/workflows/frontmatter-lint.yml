@@ -1,0 +1,12 @@
+name: frontmatter-lint   # POL-004 — SKELETON, implemented in B1.3
+on: [pull_request]
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.11'}
+      - run: pip install pyyaml jsonschema
+      - name: validate artifact front matter + ID uniqueness
+        run: python control/scripts/frontmatter_lint.py  # TODO(B1.3): implement against control/schemas/frontmatter.json

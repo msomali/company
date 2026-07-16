@@ -1,0 +1,11 @@
+name: gate-writer   # v2.1 §78-4 — SKELETON, implemented in B5.2
+on:
+  pull_request: {types: [closed]}
+jobs:
+  gate:
+    if: github.event.pull_request.merged == true
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: emit gates/GATE-*.yaml per control/schemas/gate.json from review data
+        run: python control/scripts/gate_writer.py  # TODO(B5.2); commits via bot token (see SECRETS-MANIFEST)

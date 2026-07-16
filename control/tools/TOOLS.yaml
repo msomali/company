@@ -1,0 +1,24 @@
+# Tool registry — v2 §37–38. Generator (B3.1) renders per-agent TOOLS.md from this.
+side_effect_classes:
+  read_only:        {control: logged+permission_checked}
+  reversible_write: {control: scoped+rollback}
+  material_write:   {control: G-class gate (protected-branch review)}
+  external_comm:    {control: tool ABSENT except approved human path (v1.1 §55)}
+  financial_legal:  {control: human approval mandatory}
+  production:       {control: DCE path + human release only}
+  code_execution:   {control: sandbox container only (v2.1 §85.4)}
+tools:
+  - {id: repository.read,          class: read_only}
+  - {id: repository.write_scoped,  class: reversible_write}
+  - {id: sandbox.exec,             class: code_execution}
+  - {id: test.run,                 class: code_execution}
+  - {id: ci.run,                   class: reversible_write}
+  - {id: production.deploy,        class: production}
+  - {id: external.communicate,     class: external_comm}
+  - {id: customer_data.export,     class: financial_legal}
+profiles:
+  bootstrap:   # BA-1.3
+    allow: [repository.read, repository.write_scoped, sandbox.exec, test.run]
+    deny_all_others: true
+    network_egress: package-registry-allowlist-only
+skills_policy: vendored-only   # v2.1 §85.5 — zero direct marketplace installs

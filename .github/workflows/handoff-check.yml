@@ -1,0 +1,9 @@
+name: handoff-check   # POL-005 — SKELETON, implemented in B1.3
+on: [pull_request]
+jobs:
+  handoff:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: all ten handoff sections non-empty in PR body
+        run: python control/scripts/handoff_check.py  # TODO(B1.3): read PR body via GITHUB_EVENT_PATH; fail on empty sections

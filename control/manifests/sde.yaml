@@ -1,0 +1,26 @@
+# Agent manifest — v2 §5. Pattern for all 13 (task B3.2). Source: v1 §25, v1.1 §48.3.
+agent_id: SDE
+name: Senior Software Development Engineer
+agent_version: 1.1.0
+role_contract_version: v1.1
+owner: <HUMAN>                # REQUIRED-INPUT
+status: contract-only         # activation is a human act, never a generator act
+model_policy: reasoning-max
+prompt_bundle_version: sde-prompts-1.0.0
+session_pattern: dedicated-channel
+pilot_status: ACTIVE          # per v1.1 §48.3 table
+allowed_tools:
+  - repository.read
+  - repository.write_scoped   # own branches only; PR transport per v1.1 §53
+  - sandbox.exec
+  - test.run
+denied_tools:
+  - production.deploy
+  - external.communicate
+  - customer_data.export
+memory_policy: project-engineering
+risk_ceiling: high-with-human-approval
+required_evals:
+  - implementation_correctness
+  - security_baseline
+  - documentation_completeness

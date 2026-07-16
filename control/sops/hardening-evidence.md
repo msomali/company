@@ -8,21 +8,8 @@
 | 5 | Skills vendored-only; review checklist in force; hashes pinned | Zero installed marketplace/ClawHub skills — standing rule, never install; doctor "Eligible: 17" = bundled platform skills (not installs); 30 missing-requirement skills disabled via `doctor --fix` 2026-07-15; no skills allowlist mechanism configured in 2026.7.1 ("Blocked by allowlist: 0" = none defined) | 2026-07-15 | [x] |
 | 6 | Per-agent scoped credentials; no broad OAuth/browser-profile grants; prod creds only in DCE path | Mode S (ADR-B003): anthropic `anthropic:default` setup-token (long-lived, minted via Claude Code, re-minted 2026-07-15 after invalid-token incident; password-manager copy + rotation reminder); openai OAuth profile (auto-refresh); both in per-agent auth stores, host-side, outside all workspaces; accepted `secrets audit --check` baseline = plaintext=1 (setup-token, by design) + legacy=1 (OAuth residue, by design) — do not chase zero; command owner UNSET (correct at zero channels; mandatory at first channel); provider API keys exist but UNPLACED per ADR-B003; bot PAT = classic, repo+workflow scopes, 90d expiry (fine-grained structurally impossible for collaborator repos — GitHub limitation), stored in workspace file (600, gitignored, ADR-B002/§86-C7) + Actions secret GH_TOKEN_AGENTICFOUNDRYBOT, fine-grained token revoked; bot account hygiene rule: collaborator on msomali/company ONLY; agent refused to print token value under probe (BA-2 observed in behavior) | 2026-07-15 | [x] |
 | 7 | Browser/host-exec plugins disabled by default | tools.elevated.enabled=false (explain: failing gates enabled + allowFrom); browser tool denied for bootstrap at agent policy; codex plugin auto-installed by `doctor --fix` (first-party @openclaw/codex, required plumbing for OpenAI Codex OAuth models) — recorded as deliberate addition | 2026-07-15 | [x] |
-| 8 | Dedicated VM/user; default-deny inbound firewall; patched OS; off-host repo backups | Fresh dedicated Ubuntu 24.04 arm64 VM (VMware) with layered snapshots (base-os, pre-company); apt full-upgrade at build 2026-07-15; off-host backup = GitHub remote msomali/company (live since Step 5); **firewall: run the row-8 block below, paste `ufw status verbose` here, then mark done** | 2026-07-15 | [ ] pending ufw |
+| 8 | Dedicated VM/user; default-deny inbound firewall; patched OS; off-host repo backups | Fresh dedicated Ubuntu 24.04 arm64 VM (VMware) with layered snapshots (base-os, pre-company); apt full-upgrade at build 2026-07-15; off-host backup = GitHub remote msomali/company (live since Step 5); firewall: `ufw status verbose` (owner-run, output confirmed genuine 2026-07-16): Status: active; Logging: on (low); Default: deny (incoming), allow (outgoing), deny (routed); New profiles: skip | 2026-07-16 | [x] |
 | 9 | Kill switch installed and drilled | Built at B4.4; drill required before any §87 activation — pending by design | — | [ ] pending B4.4 |
-
-Row 8 completion (run once, paste output above, flip row 8 to [x]):
-Status: active
-Logging: on (low)
-Default: deny (incoming), allow (outgoing), deny (routed)
-New profiles: skip
-```bash
-sudo ufw allow OpenSSH        # only if you ever ssh into this VM; skip otherwise
-sudo ufw default deny incoming
-sudo ufw default allow outgoing
-sudo ufw enable
-sudo ufw status verbose
-```
 
 Row guidance (field-validated 2026-07-15, OpenClaw 2026.7.1 — see PHASE-0-RUNBOOK v4.1 Step 4):
 - Row 1: `openclaw --version` output; latest stable at provisioning is the floor. Record `claude --version` too (setup-token mint, BA-4).
