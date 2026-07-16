@@ -6,12 +6,12 @@ project: control
 owner: bootstrap
 contributors: [bootstrap]
 reviewers: [human-owner]
-version: "1.0"
-status: BLOCKED
+version: "1.1"
+status: RESOLVED
 sensitivity: internal
 created: 2026-07-15
-updated: 2026-07-15
-approval: pending
+updated: 2026-07-16
+approval: granted
 ---
 
 # ESC-B001 — Bootstrap blocked: B0.x human preconditions incomplete
@@ -41,7 +41,7 @@ actor must not continue past a failing precondition.
 - **Bootstrap actor:** cannot start B1.1. Proceeding would violate BA-2.7 and
   the §85 normative precondition. Stopped; no seed-kit files committed to any
   mainline path.
-- **Human owner:** position pending (this record requests it).
+- **Human owner:** RESOLVED 2026-07-16 per option 1 — B0.1 evidence completed and committed (`control/sops/hardening-evidence.md`, PR #2, owner-attested; rows 4/8/9 remain open by the annex's progressive design and close before §87), B0.2 confirmed (evidence row 6). ADR-B004 records the companion repo-visibility decision. Branch protection live. Bootstrap resumed at B1.1.
 
 ## Evidence links
 

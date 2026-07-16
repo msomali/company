@@ -1,0 +1,158 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Task Envelope (v2.1 \u00a76)",
+  "type": "object",
+  "required": [
+    "task_id",
+    "project_id",
+    "requested_by",
+    "assigned_role",
+    "objective",
+    "acceptance_criteria",
+    "required_outputs",
+    "risk_class",
+    "tier",
+    "data_classification",
+    "priority",
+    "budgets"
+  ],
+  "properties": {
+    "task_id": {
+      "type": "string",
+      "pattern": "^TASK-[0-9]{3,}$"
+    },
+    "project_id": {
+      "type": "string",
+      "pattern": "^PROJECT-[0-9]{3,}$"
+    },
+    "requested_by": {
+      "type": "string"
+    },
+    "assigned_role": {
+      "enum": [
+        "PJM",
+        "SAA",
+        "UUD",
+        "SDE",
+        "SAT",
+        "SSE",
+        "DPC",
+        "DCE",
+        "DE",
+        "AIE",
+        "TW",
+        "ALE",
+        "LIN"
+      ]
+    },
+    "objective": {
+      "type": "string",
+      "minLength": 10
+    },
+    "business_context": {
+      "type": "string"
+    },
+    "inputs": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "artifact_id"
+        ],
+        "properties": {
+          "artifact_id": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "constraints": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "risk_class": {
+      "enum": [
+        "low",
+        "moderate",
+        "high",
+        "prohibited"
+      ]
+    },
+    "tier": {
+      "enum": [
+        "T1",
+        "T2",
+        "T3"
+      ]
+    },
+    "data_classification": {
+      "enum": [
+        "public",
+        "internal",
+        "confidential",
+        "restricted"
+      ]
+    },
+    "acceptance_criteria": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "string"
+      }
+    },
+    "required_outputs": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "string"
+      }
+    },
+    "priority": {
+      "enum": [
+        "low",
+        "medium",
+        "high",
+        "critical"
+      ]
+    },
+    "allowed_tools": {
+      "type": "string",
+      "const": "inherited-and-narrowed"
+    },
+    "human_approval_points": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "budgets": {
+      "type": "object",
+      "required": [
+        "wall_clock_minutes",
+        "tool_call_limit",
+        "model_budget_tag"
+      ],
+      "properties": {
+        "wall_clock_minutes": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "tool_call_limit": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "model_budget_tag": {
+          "type": "string"
+        },
+        "retries": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 2
+        }
+      }
+    }
+  },
+  "additionalProperties": false
+}

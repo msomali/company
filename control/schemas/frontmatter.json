@@ -1,0 +1,108 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Artifact Front Matter (v1.1 \u00a752.3 / v1 \u00a714)",
+  "type": "object",
+  "required": [
+    "artifact_id",
+    "title",
+    "type",
+    "project",
+    "owner",
+    "version",
+    "status",
+    "sensitivity",
+    "created",
+    "updated"
+  ],
+  "properties": {
+    "artifact_id": {
+      "type": "string"
+    },
+    "title": {
+      "type": "string"
+    },
+    "type": {
+      "type": "string"
+    },
+    "project": {
+      "type": "string",
+      "pattern": "^PROJECT-[0-9]{3,}$"
+    },
+    "owner": {
+      "type": "string"
+    },
+    "contributors": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "reviewers": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "version": {
+      "type": "string"
+    },
+    "status": {
+      "enum": [
+        "DRAFT",
+        "READY_FOR_REVIEW",
+        "CHANGES_REQUIRED",
+        "BLOCKED",
+        "APPROVED",
+        "APPROVED_WITH_CONDITIONS",
+        "RELEASE_CANDIDATE",
+        "RELEASED",
+        "DEPRECATED",
+        "RETIRED"
+      ]
+    },
+    "sensitivity": {
+      "enum": [
+        "public",
+        "internal",
+        "confidential",
+        "restricted"
+      ]
+    },
+    "requirements": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "sources": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "supersedes": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "superseded_by": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "approval": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "created": {
+      "type": "string"
+    },
+    "updated": {
+      "type": "string"
+    }
+  }
+}

@@ -1,0 +1,10 @@
+# Policy set v0 — v2.1 §78-30. Gate records reference these rule IDs.
+- {id: POL-001, mechanism: branch-protection,  text: main and release branches require PR + green required checks}
+- {id: POL-002, mechanism: forge-setting,      text: an identity that authored commits on a PR cannot approve it}
+- {id: POL-003, mechanism: CODEOWNERS,         text: gate paths require the owning gate identity's review}
+- {id: POL-004, mechanism: ci/frontmatter-lint, text: artifact PRs blocked on missing/invalid front matter or duplicate IDs}
+- {id: POL-005, mechanism: ci/handoff-check,   text: PRs blocked while any of the ten handoff items is empty}
+- {id: POL-006, mechanism: ci/eval-runner,     text: prompt/manifest/policy PRs blocked on golden-task regression}
+- {id: POL-007, mechanism: proxy,              text: per-agent hard budget caps; breach suspends key and BLOCKs task}
+- {id: POL-008, mechanism: dispatcher,         text: creator identity is never dispatched as required reviewer of the same artifact}
+- {id: POL-009, mechanism: ci/secret-scan,     text: any secret value in a diff is a Critical incident (BA-3.4)}

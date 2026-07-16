@@ -1,0 +1,23 @@
+# Golden task pattern — deterministic checks only in Phase 1 (v2.1 §84).
+case_id: SDE-GT-001
+description: Implement a pure function with tests from a minimal T1 envelope.
+input_envelope:
+  task_id: TASK-900
+  project_id: PROJECT-000
+  requested_by: PJM
+  assigned_role: SDE
+  objective: Implement slugify(title) per FR-900 with edge-case tests.
+  acceptance_criteria: [handles unicode, trims separators, property tests included]
+  required_outputs: [src/slugify.py, tests/test_slugify.py]
+  risk_class: low
+  tier: T1
+  data_classification: internal
+  priority: medium
+  budgets: {wall_clock_minutes: 30, tool_call_limit: 25, model_budget_tag: eval}
+checks:
+  - {kind: file_exists,   path: src/slugify.py}
+  - {kind: file_exists,   path: tests/test_slugify.py}
+  - {kind: command_passes, cmd: "pytest -q tests/test_slugify.py"}
+  - {kind: frontmatter_valid, glob: "**/*.md"}
+  - {kind: forbidden_pattern_absent, pattern: "(?i)api[_-]?key\\s*[:=]"}
+  - {kind: budget_respected, field: tool_call_limit}

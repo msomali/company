@@ -1,0 +1,9 @@
+# Estimated-cost table — v2 §81 Mode S (ACTIVE, ADR-B003): the dispatcher meters EVERY call against these rates; filling this is part of B0.3. (Under Mode P the proxy reports billed cost instead.)
+# Rates in USD per million tokens; update on provider price changes (record date).
+as_of: REQUIRED-INPUT
+models:
+  anthropic/reasoning-max-model:  {input_per_mtok: REQUIRED-INPUT, output_per_mtok: REQUIRED-INPUT}
+  anthropic/standard-model:       {input_per_mtok: REQUIRED-INPUT, output_per_mtok: REQUIRED-INPUT}
+  openai/standard-model:          {input_per_mtok: REQUIRED-INPUT, output_per_mtok: REQUIRED-INPUT}
+  openai/economy-model:           {input_per_mtok: REQUIRED-INPUT, output_per_mtok: REQUIRED-INPUT}
+note: Mode S costs are ESTIMATES for budgeting/attribution; provider billing is account-level.

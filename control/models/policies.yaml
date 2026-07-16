@@ -1,0 +1,37 @@
+# v2.1 §81. Structure fixed; provider/model values are REQUIRED-INPUT (task B0.3).
+mode: S   # S = subscription/account auth (ACTIVE, ADR-B003) | P = routing proxy + API keys (dormant fallback; owner-approved ADR required to reactivate)
+mode_s:                          # ACTIVE (ADR-B003)
+  concurrency_cap: 3            # max simultaneous model sessions across all agents
+  prices_file: control/models/prices.yaml
+mode_p:                          # dormant fallback — LiteLLM standard per v2 §81 Mode P; reactivation = owner ADR
+  kind: litellm
+  budget_alert_thresholds: [0.60, 0.85]
+policies:
+  reasoning-max:
+    primary: REQUIRED-INPUT      # e.g. provider/model
+    fallback: REQUIRED-INPUT
+  standard:
+    primary: REQUIRED-INPUT
+    fallback: REQUIRED-INPUT
+  economy:
+    primary: REQUIRED-INPUT
+    fallback: REQUIRED-INPUT
+rules:
+  - id: MODEL-001
+    text: SAT resolves to a different model family than the implementer of the same artifact.
+  - id: MODEL-002
+    text: Fallbacks are evaluated (v2 §47) and never silently weaker on safety.
+agents:   # key -> policy; must mirror v1 §48.3 (short codes per ADR-B001)
+  PJM: standard
+  SAA: reasoning-max
+  UUD: standard
+  SDE: reasoning-max
+  SAT: standard
+  SSE: reasoning-max
+  DPC: standard
+  DCE: standard
+  DE: standard
+  AIE: reasoning-max
+  TW: economy
+  ALE: economy
+  LIN: economy
