@@ -3,7 +3,7 @@
 Task definitions, dependencies, actors, and outputs: **Bootstrap Annex BA-6** (authoritative).
 Rules of execution: BA-5. Prohibitions: BA-2. One task = one branch = one PR.
 
-- [x] B0.1 (H) Hardening §85 complete, evidence committed — `control/sops/hardening-evidence.md` (owner-attested 2026-07-15; rows 4/8/9 open by progressive design, close pre-§87)
+- [x] B0.1 (H) Hardening §85 complete, evidence committed — `control/sops/hardening-evidence.md` (owner-attested 2026-07-15; rows 4/9 open by progressive design, close pre-§87)
 - [x] B0.2 (H) Forge org, machine accounts, tokens placed per BA-3 — repo + `agenticfoundrybot` live; PAT placement per ADR-B002 (classic PAT deviation recorded in evidence row 6)
 - [ ] B0.3 (H) Provider subscriptions confirmed + OAuth sign-ins done (D5 resolved per ADR-B003); policies.yaml (mode: S) + prices.yaml filled
 - [ ] B0.4 (H) §51 owner + channel filled; §86 register signed
