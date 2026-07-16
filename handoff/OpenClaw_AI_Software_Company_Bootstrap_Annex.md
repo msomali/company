@@ -1,7 +1,7 @@
 # OpenClaw AI Software Company — Bootstrap Annex (BA)
 
 **Status:** Normative implementation directive for the bootstrap phase
-**Adopted under:** v1 §44 change management. Revision 1.1 (2026-07-14). Extends v1.3 and v2.6; weakens nothing beyond the explicitly registered v2 §86-C7 carve-out (ADR-B002). Conflicts resolve to v1.3/v2.6.
+**Adopted under:** v1 §44 change management. Revision 1.2 (2026-07-15). Extends v1.3 and v2.6; weakens nothing beyond the explicitly registered v2 §86-C7 carve-out (ADR-B002). Conflicts resolve to v1.3/v2.6.
 **Audience:** The bootstrap implementer (an AI coding agent) and the human owner.
 **Completion:** This annex is complete when v2.1 §88 passes and v2.1 §87 evaluates true for Phase 1. The bootstrap identity is then revoked (BA-8).
 
@@ -68,6 +68,7 @@ To remove improvisation, the following are fixed. Substituting any item is an `A
 | Dispatcher runtime | `systemd` service on the host, OS user `dispatcher`, outside OpenClaw (BA-1.4) |
 | Secret scanning | `gitleaks` in CI |
 | Host OS | Ubuntu LTS |
+| Anthropic credential mint (§81 Mode S) | Claude Code CLI (`@anthropic-ai/claude-code`), installed deliberately on the host; `claude setup-token` mints the long-lived subscription token that OpenClaw stores in its own auth profile. A documented dependency — never an incidental leftover |
 | Model policies (v2.1 §81) | Structure fixed in `/control/models/policies.yaml`; provider/model mapping = REQUIRED-INPUT (human) |
 
 ## BA-5. Execution Protocol
@@ -122,5 +123,7 @@ On B8.1 completion: the `bootstrap` TOOLS profile is deleted, its tokens rotated
 ---
 
 **Annex revision 1.1 (2026-07-14).** BA-2.2, BA-3, and B0.2 aligned to ADR-B000 (single machine identity) and ADR-B002 (workspace token placement, registered as v2 §86-C7); B0.3, B2.1–B2.2, BA-3 mechanics item 5, and the BA-4 model-access row aligned to ADR-B003 (Mode S active; Mode P approval-gated fallback). Reference versions bumped to v1.3/v2.6. Nothing else changed.
+
+**Annex revision 1.2 (2026-07-15).** BA-4 gains the Claude Code row (the Anthropic setup-token mint), reflecting the field-validated Phase-0 run. Nothing else changed.
 
 **End of Bootstrap Annex**
