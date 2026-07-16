@@ -7,7 +7,7 @@ Rules of execution: BA-5. Prohibitions: BA-2. One task = one branch = one PR.
 - [x] B0.2 (H) Forge org, machine accounts, tokens placed per BA-3 — repo + `agenticfoundrybot` live; PAT placement per ADR-B002 (classic PAT deviation recorded in evidence row 6)
 - [ ] B0.3 (H) Provider subscriptions confirmed + OAuth sign-ins done (D5 resolved per ADR-B003); policies.yaml (mode: S) + prices.yaml filled
 - [ ] B0.4 (H) §51 owner + channel filled; §86 register signed
-- [ ] B1.1 (A) Repo initialized with this kit; digest extracted
+- [x] B1.1 (A) Repo initialized with this kit; digest extracted — PR #3 merged 2026-07-16
 - [ ] B1.2 (H-EXEC) Branch protection + CODEOWNERS + required checks applied
 - [ ] B1.3 (A) CI: frontmatter-lint, handoff-check, secret-scan implemented and green
 - [ ] B2.1 (A) LiteLLM compose/config authored (dormant Mode P fallback; secret names only)
