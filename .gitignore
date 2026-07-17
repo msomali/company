@@ -7,7 +7,12 @@
 /HEARTBEAT.md
 /BOOTSTRAP.md
 /MEMORY.md
-/memory/
+# /memory: OpenClaw session notes stay untracked; the governed B6.1 tree
+# (org/, roles/, README) is tracked — v2.1 §83 write path via reviewed PR.
+/memory/*
+!/memory/README.md
+!/memory/org/
+!/memory/roles/
 /openclaw-workspace-state.json
 /.openclaw/
 .secrets/
