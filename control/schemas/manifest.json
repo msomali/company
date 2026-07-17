@@ -1,0 +1,112 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Agent Manifest (v2 \u00a75 + bootstrap extensions + role-contract prose for generation, v1.1 \u00a748.1)",
+  "type": "object",
+  "required": [
+    "agent_id",
+    "name",
+    "agent_version",
+    "role_contract_version",
+    "owner",
+    "status",
+    "model_policy",
+    "prompt_bundle_version",
+    "allowed_tools",
+    "denied_tools",
+    "memory_policy",
+    "risk_ceiling",
+    "required_evals",
+    "role_contract"
+  ],
+  "properties": {
+    "agent_id": {
+      "type": "string",
+      "pattern": "^[A-Z]{2,3}$"
+    },
+    "name": {
+      "type": "string",
+      "minLength": 1
+    },
+    "agent_version": {
+      "type": "string",
+      "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$"
+    },
+    "role_contract_version": {
+      "type": "string"
+    },
+    "owner": {
+      "type": "string"
+    },
+    "status": {
+      "enum": ["contract-only", "active"]
+    },
+    "model_policy": {
+      "type": "string"
+    },
+    "prompt_bundle_version": {
+      "type": "string"
+    },
+    "session_pattern": {
+      "type": "string"
+    },
+    "pilot_status": {
+      "enum": ["ACTIVE", "ON-DEMAND", "DORMANT"]
+    },
+    "allowed_tools": {
+      "type": "array",
+      "items": {"type": "string"},
+      "minItems": 1
+    },
+    "denied_tools": {
+      "type": "array",
+      "items": {"type": "string"}
+    },
+    "memory_policy": {
+      "type": "string"
+    },
+    "risk_ceiling": {
+      "type": "string"
+    },
+    "required_evals": {
+      "type": "array",
+      "items": {"type": "string"},
+      "minItems": 1
+    },
+    "role_contract": {
+      "type": "object",
+      "required": [
+        "identity",
+        "mission",
+        "principles",
+        "responsibilities",
+        "collaboration",
+        "escalation"
+      ],
+      "properties": {
+        "identity": {"type": "string", "minLength": 1},
+        "mission": {"type": "string", "minLength": 1},
+        "principles": {
+          "type": "array",
+          "items": {"type": "string"},
+          "minItems": 1
+        },
+        "responsibilities": {
+          "type": "array",
+          "items": {"type": "string"},
+          "minItems": 1
+        },
+        "collaboration": {
+          "type": "array",
+          "items": {"type": "string"},
+          "minItems": 1
+        },
+        "escalation": {
+          "type": "array",
+          "items": {"type": "string"},
+          "minItems": 1
+        }
+      },
+      "additionalProperties": false
+    }
+  }
+}
