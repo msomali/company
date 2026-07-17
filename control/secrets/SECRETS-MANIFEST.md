@@ -2,7 +2,10 @@
 | Name | Purpose | Destination | Read by | Owner | Rotation |
 |---|---|---|---|---|---|
 | GH_TOKEN_AGENTICFOUNDRYBOT | all agent commits/PRs (ADR-B000) | GitHub Actions secret + workspace-local file (see note) | gate-writer, handoff-check, all worker agents | <HUMAN> | 90d |
-| LITELLM_MASTER_KEY | proxy admin — **Mode P fallback only; do not create under Mode S (ADR-B003)** | host env /etc/company/dispatcher.env | dispatcher, proxy | <HUMAN> | 90d |
+| LITELLM_MASTER_KEY | proxy admin — **Mode P fallback only; do not create under Mode S (ADR-B003)** | host env /etc/company/dispatcher.env (+ /etc/company/proxy.env at reactivation — B2.1 compose reads it there) | dispatcher, proxy | <HUMAN> | 90d |
+| PROXY_DB_PASSWORD | proxy virtual-key store (Postgres) — **Mode P fallback only (ADR-B003)** | /etc/company/proxy.env | proxy compose only | <HUMAN> | 90d |
+| DATABASE_URL | proxy→Postgres DSN (embeds PROXY_DB_PASSWORD) — **Mode P fallback only (ADR-B003)** | /etc/company/proxy.env | proxy only | <HUMAN> | with PROXY_DB_PASSWORD |
+| AGENT_VKEY_{PJM,SAA,UUD,SDE,SAT,SSE,DPC,DCE,DE,AIE,TW,ALE,LIN} | 13 per-agent proxy virtual keys (budget-scoped) — **Mode P fallback only; created by keys-bootstrap.sh at B2.2** | /etc/company/agent-keys/<CODE>.key (700 dir, 600 files) | dispatcher (injects at spawn) | <HUMAN> | 90d or key suspension |
 | PROVIDER_KEY_PRIMARY | model provider — **Mode P fallback only; key exists but MUST NOT be placed under Mode S (ADR-B003)** | proxy container env_file | proxy only | <HUMAN> | 90d |
 | PROVIDER_KEY_SECONDARY | fallback provider — **Mode P fallback only; key exists but MUST NOT be placed under Mode S (ADR-B003)** | proxy container env_file | proxy only | <HUMAN> | 90d |
 | APPROVALS_CHANNEL_TOKEN | approvals capture | host env /etc/company/dispatcher.env | dispatcher | <HUMAN> | 90d |
