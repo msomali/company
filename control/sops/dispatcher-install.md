@@ -19,20 +19,33 @@ Env file variable NAMES (values never in the repo — SECRETS-MANIFEST):
 register pre-notes that adding it amends the register + sets the OpenClaw
 command owner).
 
-## Design decisions needing your sign-off at install (both pre-wired, neither irreversible)
+## Design decisions — APPROVED by owner (PR #17 review, 2026-07-17) with the deploy-key rider
 
-1. **State-commit identity.** Episode/state commits made by the dispatcher are
-   authored as `dispatcher <dispatcher@company.local>` — NOT the bot PAT
-   identity. Rationale: ADR-B000 binds *agent* commits to `agenticfoundrybot`;
-   the dispatcher is infrastructure (BA-1.4), and v2 §80.4 keeps its
-   credentials out of agent reach. Distinct authorship makes state-machine
-   writes auditable separately from agent work.
-2. **Push path.** The dispatcher never pushes to `main` (protection applies to
-   everyone). It commits state/episode changes locally and pushes to
-   `dispatch/TASK-###` branches; episode artifacts enter `main` via the task's
-   PR like everything else. This satisfies §79 ("episodes/ writable only by
-   CI" on main) without weakening protection. If you prefer episodes to land
-   exclusively via CI automation later, the gate-writer (B5.2) absorbs it.
+1. **State-commit identity (APPROVED).** Episode/state commits made by the
+   dispatcher are authored as `dispatcher <dispatcher@company.local>` — NOT
+   the bot PAT identity. ADR-B000 binds *agent* commits to `agenticfoundrybot`;
+   the dispatcher is infrastructure (BA-1.4). The provenance ledger is
+   three-way: owner / agent-roles / infrastructure.
+
+   **Owner rider — authentication separation (binding):** the dispatcher
+   pushes with its **own dedicated read-write deploy key** (ed25519, generated
+   at install, key file mode 600 under the `dispatcher` user, registered on
+   `msomali/company`) — **NEVER a third copy of the bot PAT.** Rationale
+   (owner): independent revocation — the B4.4 kill switch cuts dispatcher
+   access without touching agent pushes; no PAT custody proliferation; GitHub
+   attributes pushes to the key. Custody row added to SECRETS-MANIFEST.
+2. **Push path (APPROVED).** The dispatcher never pushes to `main` (protection
+   applies to everyone). It commits state/episode changes locally and pushes
+   to `dispatch/TASK-###` branches; episode artifacts enter `main` via the
+   task's PR like everything else. This satisfies §79 ("episodes/ writable
+   only by CI" on main) without weakening protection. If you prefer episodes
+   to land exclusively via CI automation later, the gate-writer (B5.2)
+   absorbs it.
+
+**Read-path note (owner):** review-polling and fetches can run
+unauthenticated while the repo is public (ADR-B004). **TODO at the private
+flip:** provision a read credential for the dispatcher (the deploy key
+already covers it — verify, then delete this line).
 
 ## Install (run as root; each command idempotent)
 
@@ -50,6 +63,21 @@ sudo -u dispatcher /srv/company/venv/bin/pip install pyyaml jsonschema
 # 3. dispatcher git identity (design decision 1)
 sudo -u dispatcher git -C /srv/company/repo config user.name  "dispatcher"
 sudo -u dispatcher git -C /srv/company/repo config user.email "dispatcher@company.local"
+
+# 3b. dedicated deploy key (owner rider, PR #17) — never the bot PAT
+sudo -u dispatcher install -d -m 700 /srv/company/.ssh
+sudo -u dispatcher ssh-keygen -t ed25519 -N "" -C "company-dispatcher-deploy" \
+  -f /srv/company/.ssh/dispatcher_deploy_key      # creates key 600 by default
+# Register the PUBLIC key as a read-write deploy key (admin, one-time):
+#   gh repo deploy-key add /srv/company/.ssh/dispatcher_deploy_key.pub \
+#     --repo msomali/company --title company-dispatcher --allow-write
+# (or Settings → Deploy keys → Add; check "Allow write access")
+sudo -u dispatcher git -C /srv/company/repo remote set-url origin \
+  git@github.com:msomali/company.git
+sudo -u dispatcher git -C /srv/company/repo config core.sshCommand \
+  "ssh -i /srv/company/.ssh/dispatcher_deploy_key -o IdentitiesOnly=yes"
+# Revocation drill target (B4.4 kill switch): deleting the deploy key on the
+# repo severs dispatcher push access without touching agent credentials.
 
 # 4. env file (names only here; you supply values if/when needed)
 install -d -m 755 /etc/company
@@ -70,6 +98,13 @@ systemctl status company-dispatcher.service --no-pager | head -12
 journalctl -u company-dispatcher.service -n 5 --no-pager
 sudo -u dispatcher /srv/company/venv/bin/python \
   /srv/company/repo/control/scripts/dispatcher_runtime.py --once
+```
+
+Additional rider verification (paste with the rest):
+
+```bash
+sudo -u dispatcher git -C /srv/company/repo ls-remote origin HEAD | head -1   # deploy key works (read)
+stat -c '%a %U' /srv/company/.ssh/dispatcher_deploy_key                        # expect: 600 dispatcher
 ```
 
 Expected: service `active (running)`; journal shows the idle heartbeat
