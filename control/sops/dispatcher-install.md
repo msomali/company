@@ -90,8 +90,23 @@ echo "APPROVE TASK-999 SAT" | sudo -u dispatcher /srv/company/venv/bin/python \
 
 ## Evidence — B4.3 (owner paste + date)
 
-```
-REQUIRED-INPUT (owner): paste the three verify outputs here
-```
+● company-dispatcher.service - Company dispatcher (v2 §82) — task state, approvals, metering
+     Loaded: loaded (/etc/systemd/system/company-dispatcher.service; enabled; preset: enabled)
+     Active: active (running) since Fri 2026-07-17 01:24:44 PDT; 7h ago
+ Invocation: 7d629884fde64f74833fee931792b391
+       Docs: file:///srv/company/repo/control/sops/dispatcher-install.md
+   Main PID: 69993 (python)
+      Tasks: 1 (limit: 4484)
+     Memory: 18.8M (max: 1G, available: 1005.1M, peak: 23.1M)
+        CPU: 657ms
+     CGroup: /system.slice/company-dispatcher.service
+             └─69993 /srv/company/venv/bin/python control/scripts/dispatcher_runtime.py --daemon --interval 60
 
-Attested by: REQUIRED-INPUT (owner)
+Jul 17 01:24:44 mr-robot-VMware20-1 systemd[1]: Started company-dispatcher.service - Company dispatcher (v2 §82) — task state, approvals, metering.
+
+dispatcher: 0 task(s); concurrency cap=3
+
+Deploy-key rider executed per PR #17 review: key "dispatcher@company-vm" registered read-write <date>; GH_TOKEN_DISPATCHER retired — dispatcher authenticates by key only
+Identity verification: ssh -T as dispatcher greets "Hi msomali/company!" — deploy-key scoped identity confirmed, 2026-07-17.
+
+Attested by: msomali, 2026-07-17
