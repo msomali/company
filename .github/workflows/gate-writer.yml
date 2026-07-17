@@ -1,13 +1,28 @@
-name: gate-writer   # v2.1 §78-4 — SKELETON, implemented in B5.2
-# Gated to manual dispatch until B5.2 implements the writer — same rationale as
-# eval-runner (it would fail red on EVERY merge). B5.2 restores:
-#   on:
-#     pull_request: {types: [closed]}
-on: [workflow_dispatch]
+name: gate-writer   # v2.1 §78-4 — implemented in B5.2
+# On every merged PR (except gate/* heads — recursion guard) emit a
+# gates/GATE-*.yaml record and open a gate/pr-<N> PR with the bot token.
+# Rationale for PR-based landing: main requires a PR for every identity
+# (v2 §79), so CI cannot push gate records to main directly.
+on:
+  pull_request:
+    types: [closed]
+  workflow_dispatch:
 jobs:
   gate:
     runs-on: ubuntu-latest
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (github.event.pull_request.merged == true &&
+       !startsWith(github.event.pull_request.head.ref, 'gate/'))
     steps:
       - uses: actions/checkout@v4
-      - name: emit gates/GATE-*.yaml per control/schemas/gate.json from review data
-        run: python control/scripts/gate_writer.py  # TODO(B5.2); commits via bot token (see SECRETS-MANIFEST)
+        with:
+          ref: main
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.11'}
+      - run: pip install pyyaml jsonschema
+      - name: emit gate record + open gate PR
+        run: python control/scripts/gate_writer.py
+        env:
+          GH_TOKEN: ${{ secrets.GH_TOKEN_AGENTICFOUNDRYBOT }}
