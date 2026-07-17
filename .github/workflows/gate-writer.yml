@@ -3,10 +3,24 @@ name: gate-writer   # v2.1 §78-4 — implemented in B5.2
 # gates/GATE-*.yaml record and open a gate/pr-<N> PR with the bot token.
 # Rationale for PR-based landing: main requires a PR for every identity
 # (v2 §79), so CI cannot push gate records to main directly.
+#
+# persist-credentials MUST stay false: actions/checkout otherwise persists
+# GITHUB_TOKEN as an http extraheader that overrides the PAT on push — the
+# push then authenticates as github-actions[bot] and is denied (live-run
+# failure, 2026-07-17). GITHUB_TOKEN itself is scoped contents:read below.
+#
+# Replay: workflow_dispatch with pr_number rebuilds the record for an
+# already-merged PR whose merge event was consumed (e.g. #23).
 on:
   pull_request:
     types: [closed]
   workflow_dispatch:
+    inputs:
+      pr_number:
+        description: merged PR number to (re)emit a gate record for
+        required: false
+permissions:
+  contents: read
 jobs:
   gate:
     runs-on: ubuntu-latest
@@ -19,10 +33,11 @@ jobs:
         with:
           ref: main
           fetch-depth: 0
+          persist-credentials: false
       - uses: actions/setup-python@v5
         with: {python-version: '3.11'}
       - run: pip install pyyaml jsonschema
       - name: emit gate record + open gate PR
         run: python control/scripts/gate_writer.py
         env:
-          GH_TOKEN: ${{ secrets.GH_TOKEN_AGENTICFOUNDRYBOT }}
+          GH_TOKEN: *** secrets.GH_TOKEN_AGENTICFOUNDRYBOT }}
