@@ -14,10 +14,12 @@ OS user `dispatcher`, outside OpenClaw.
 | Env file | created by you, from the names below | `/etc/company/dispatcher.env` (root:dispatcher, 640) |
 
 Env file variable NAMES (values never in the repo — SECRETS-MANIFEST):
-`GH_TOKEN_DISPATCHER` (reserved; not required for the idle loop),
+`GH_TOKEN_DISPATCHER` — **RETIRED** by the deploy-key rider (PR #17 review,
+executed PR #20): the dispatcher authenticates by its dedicated deploy key
+only, never a PAT. Do not provision this variable.
 `APPROVALS_CHANNEL_TOKEN` (reserved until the dedicated channel exists — §51
 register pre-notes that adding it amends the register + sets the OpenClaw
-command owner).
+command owner). The env file remains empty until then (evidence, PR #20).
 
 ## Design decisions — APPROVED by owner (PR #17 review, 2026-07-17) with the deploy-key rider
 
