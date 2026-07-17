@@ -1,14 +1,23 @@
-name: eval-runner   # POL-006 — SKELETON, implemented in B5.1
-# Gated to manual dispatch until B5.1 wires the runner (owner direction,
-# 2026-07-16): a permanently red check trains bad review habits. B5.1 restores:
-#   on:
-#     pull_request:
-#       paths: [control/prompts/**, control/manifests/**, control/policies/**]
-#     schedule: [{cron: '0 3 * * *'}]
-on: [workflow_dispatch]
+name: eval-runner   # POL-006 — implemented in B5.1 (v2.1 §84)
+# Triggers restored per owner direction 2026-07-16 (skeleton was manual-only
+# so a permanently red check would not train bad review habits).
+on:
+  pull_request:
+    paths:
+      - 'control/prompts/**'
+      - 'control/manifests/**'
+      - 'control/policies/**'
+      - 'control/evals/**'
+      - 'control/scripts/eval_runner.py'
+  schedule:
+    - cron: '0 3 * * *'   # nightly (§84.2)
+  workflow_dispatch:
 jobs:
   evals:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - run: python control/scripts/eval_runner.py --config control/evals/runner.yaml  # TODO(B5.1)
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.11'}
+      - run: pip install pyyaml jsonschema pytest
+      - run: python control/scripts/eval_runner.py --config control/evals/runner.yaml

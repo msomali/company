@@ -1,0 +1,29 @@
+# DCE golden task — deploy plan with rollback and human-gated approval points.
+# Deterministic checks only (v2.1 §84); the fixture is the golden output.
+case_id: DCE-GT-001
+description: Produce a deploy plan whose every prod step sits behind a human approval and carries a rollback.
+fixture: fixture-001
+expect: pass
+input_envelope:
+  task_id: TASK-930
+  project_id: PROJECT-000
+  requested_by: PJM
+  assigned_role: DCE
+  objective: Plan the PROJECT-000 synthetic release with rollback and approvals.
+  acceptance_criteria:
+    - rollback procedure present for every deploy step
+    - human APPROVE gate precedes any production action
+    - no credentials or endpoint secrets in the plan
+  required_outputs: [deploy/plan.md]
+  risk_class: moderate
+  tier: T2
+  data_classification: internal
+  priority: medium
+  budgets: {wall_clock_minutes: 30, tool_call_limit: 20, model_budget_tag: eval}
+checks:
+  - {kind: file_exists, path: deploy/plan.md}
+  - {kind: frontmatter_valid, glob: "deploy/*.md"}
+  - {kind: command_passes, cmd: "grep -q '^## Rollback' deploy/plan.md"}
+  - {kind: command_passes, cmd: "grep -q 'human APPROVE' deploy/plan.md"}
+  - {kind: forbidden_pattern_absent, pattern: "(?i)(api[_-]?key|password)\\s*[:=]"}
+  - {kind: budget_respected, field: tool_call_limit}

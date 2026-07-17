@@ -1,0 +1,26 @@
+# SEEDED FAILURE (v2.1 §84 / BA-6 B5.1 acceptance: "CI blocks a seeded
+# failing case"). This case MUST fail its checks — the fixture ships without
+# tests. `expect: fail` means the runner passes only when this case is
+# blocked; if it ever passes, the harness itself is broken and the run
+# exits 1.
+case_id: SDE-GT-002-SEEDED
+description: Seeded failing case proving the eval harness blocks regressions.
+fixture: fixture-002
+expect: fail
+input_envelope:
+  task_id: TASK-901
+  project_id: PROJECT-000
+  requested_by: PJM
+  assigned_role: SDE
+  objective: Implement slugify(title) per FR-900 with edge-case tests.
+  acceptance_criteria: [handles unicode, trims separators, property tests included]
+  required_outputs: [src/slugify.py, tests/test_slugify.py]
+  risk_class: low
+  tier: T1
+  data_classification: internal
+  priority: medium
+  budgets: {wall_clock_minutes: 30, tool_call_limit: 25, model_budget_tag: eval}
+checks:
+  - {kind: file_exists,   path: src/slugify.py}
+  - {kind: file_exists,   path: tests/test_slugify.py}     # absent — seeded miss
+  - {kind: command_passes, cmd: "{python} -m pytest -q tests/test_slugify.py"}  # nothing to collect — seeded miss

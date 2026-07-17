@@ -1,6 +1,6 @@
-# Eval runner config — v2.1 §84 (implemented in B5.1). SKELETON.
-trigger_paths: [control/prompts/**, control/manifests/**, control/policies/**]
+# Eval runner config — v2.1 §84 (implemented in B5.1, eval_runner.py).
+trigger_paths: [control/prompts/**, control/manifests/**, control/policies/**, control/evals/**]
 schedule: nightly
 blocking: mandatory_checks_cannot_average   # v2 §57
 case_glob: control/evals/*/case-*.yaml
-report_to: episodes/eval-runs/
+report_to: episodes/eval-runs/   # committed by gate-writer path (B5.2); runner writes only with --report

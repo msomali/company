@@ -1,0 +1,28 @@
+# PJM golden task — decompose an FR into a valid downstream task envelope.
+# Deterministic checks only (v2.1 §84); the fixture is the golden output.
+case_id: PJM-GT-001
+description: Decompose FR-900 into a schema-valid SDE task envelope with traceable acceptance criteria.
+fixture: fixture-001
+expect: pass
+input_envelope:
+  task_id: TASK-910
+  project_id: PROJECT-000
+  requested_by: human-owner
+  assigned_role: PJM
+  objective: Decompose FR-900 (slug generation) into one SDE task envelope.
+  acceptance_criteria:
+    - produced envelope validates against control/schemas/task.json
+    - acceptance criteria reference FR-900 verifiably
+    - budgets set within project ceilings
+  required_outputs: [tasks/TASK-911-envelope.yaml]
+  risk_class: low
+  tier: T1
+  data_classification: internal
+  priority: medium
+  budgets: {wall_clock_minutes: 20, tool_call_limit: 15, model_budget_tag: eval}
+checks:
+  - {kind: file_exists, path: tasks/TASK-911-envelope.yaml}
+  - {kind: command_passes, cmd: "{python} -c \"import json,yaml,jsonschema; jsonschema.validate(yaml.safe_load(open('tasks/TASK-911-envelope.yaml')), json.load(open('{repo}/control/schemas/task.json')))\""}
+  - {kind: command_passes, cmd: "grep -q 'FR-900' tasks/TASK-911-envelope.yaml"}
+  - {kind: forbidden_pattern_absent, pattern: "REQUIRED-INPUT"}
+  - {kind: budget_respected, field: tool_call_limit}

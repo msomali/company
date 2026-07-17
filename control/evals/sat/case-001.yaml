@@ -1,0 +1,29 @@
+# SAT golden task — gate review record in the §86-C6 attribution format.
+# Deterministic checks only (v2.1 §84); the fixture is the golden output.
+case_id: SAT-GT-001
+description: Produce a SAT gate review with explicit role attribution, verdict, and evidence references.
+fixture: fixture-001
+expect: pass
+input_envelope:
+  task_id: TASK-920
+  project_id: PROJECT-000
+  requested_by: dispatcher
+  assigned_role: SAT
+  objective: Review TASK-911 SDE output against its acceptance criteria.
+  acceptance_criteria:
+    - review carries explicit SAT attribution (§86-C6)
+    - verdict line present (approve-recommend or request-changes)
+    - every criterion cites evidence, none marked unverified
+  required_outputs: [review/GATE-SAT-TASK-911.md]
+  risk_class: low
+  tier: T1
+  data_classification: internal
+  priority: medium
+  budgets: {wall_clock_minutes: 20, tool_call_limit: 15, model_budget_tag: eval}
+checks:
+  - {kind: file_exists, path: review/GATE-SAT-TASK-911.md}
+  - {kind: frontmatter_valid, glob: "review/*.md"}
+  - {kind: command_passes, cmd: "grep -q '^role: SAT' review/GATE-SAT-TASK-911.md"}
+  - {kind: command_passes, cmd: "grep -Eq '^Verdict: (approve-recommend|request-changes)$' review/GATE-SAT-TASK-911.md"}
+  - {kind: forbidden_pattern_absent, pattern: "(?i)\\bunverified\\b|\\brubber.?stamp\\b"}
+  - {kind: budget_respected, field: tool_call_limit}
