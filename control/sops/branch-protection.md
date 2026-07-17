@@ -90,11 +90,26 @@ gh api repos/msomali/company/branches/main/protection \
 REQUIRED-INPUT (owner): paste Phase E output after Phase 1 here
 ```
 
+{
+  "checks": null,
+  "conversation": true,
+  "deletions": false,
+  "enforce_admins": true,
+  "force_pushes": false,
+  "reviews": {
+    "code_owners": true,
+    "count": 1,
+    "dismiss_stale": true
+  }
+}
+
+Attested by: msomali, 2026-07-16
+
 ### Evidence — Phase 2 (owner paste + date, at B1.3)
 
 ```
 REQUIRED-INPUT (owner): paste Phase E output after Phase 2 here
 ```
 
-Attested by: REQUIRED-INPUT (owner) — on commit of Phase 1 evidence, B1.2 is
+Attested by: msomali, 2026-07-16 — on commit of Phase 1 evidence, B1.2 is
 complete except the Phase 2 checks row, which closes with B1.3.
