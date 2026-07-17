@@ -9,6 +9,7 @@
 | PROVIDER_KEY_PRIMARY | model provider — **Mode P fallback only; key exists but MUST NOT be placed under Mode S (ADR-B003)** | proxy container env_file | proxy only | <HUMAN> | 90d |
 | PROVIDER_KEY_SECONDARY | fallback provider — **Mode P fallback only; key exists but MUST NOT be placed under Mode S (ADR-B003)** | proxy container env_file | proxy only | <HUMAN> | 90d |
 | APPROVALS_CHANNEL_TOKEN | approvals capture | host env /etc/company/dispatcher.env | dispatcher | <HUMAN> | 90d |
+| DISPATCHER_DEPLOY_KEY | dispatcher git push (ed25519 deploy key, rw; owner rider PR #17) — **never a PAT copy**; revocation = delete key on repo (kill-switch integration B4.4) | /srv/company/.ssh/dispatcher_deploy_key (600, dispatcher-owned; pubkey registered on repo) | dispatcher only | <HUMAN> at install | 180d or on incident |
 | GATEWAY_AUTH_TOKEN | gateway operator/dashboard auth (v2 §85.2) | host file `/home/<user>/.openclaw/secrets/gateway-token` via SecretRef (file provider, id `value`) — outside every workspace; **generated** with `openssl rand -hex 32`, never hand-copied | gateway at startup; human for dashboard login | <HUMAN> | 90d (regenerate file + gateway restart) |
 Verification: existence-only checks (exit codes). Printing any value, even masked, is prohibited.
 
