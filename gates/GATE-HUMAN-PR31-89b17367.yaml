@@ -1,0 +1,16 @@
+# Gate Decision Record (v2 §8) — emitted by gate-writer (B5.2)
+gate_id: GATE-HUMAN-PR31-89b17367
+artifact_or_release: 'PR #31: B6.3: weekly metrics script + first report (METRICS-2026-W29)'
+gate_owner: HUMAN
+decision: APPROVED
+criteria_version: v2§8/v1§15 handoff rev 1
+evidence:
+- https://github.com/msomali/company/pull/31
+- https://github.com/msomali/company/pull/31#pullrequestreview-4727001273
+- merge:89b173670da1407ece20c9e5b5f9817229cf57ea
+findings: []
+conditions: []
+expires: null
+next_owner: Human owner (review + merge; backfill re-dispatch decision).
+decided_at: '2026-07-17T23:49:37Z'
+approval_message_ref: https://github.com/msomali/company/pull/31#pullrequestreview-4727001273
