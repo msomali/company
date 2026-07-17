@@ -1,4 +1,4 @@
-# v2.1 §81. Structure fixed; provider/model values are REQUIRED-INPUT (task B0.3).
+# v2.1 §81. Structure fixed; provider/model values filled by owner (task B0.3, 2026-07-16).
 mode: S   # S = subscription/account auth (ACTIVE, ADR-B003) | P = routing proxy + API keys (dormant fallback; owner-approved ADR required to reactivate)
 mode_s:                          # ACTIVE (ADR-B003)
   concurrency_cap: 3            # max simultaneous model sessions across all agents
@@ -7,15 +7,15 @@ mode_p:                          # dormant fallback — LiteLLM standard per v2 
   kind: litellm
   budget_alert_thresholds: [0.60, 0.85]
 policies:
-  reasoning-max:
-    primary: REQUIRED-INPUT      # e.g. provider/model
-    fallback: REQUIRED-INPUT
-  standard:
-    primary: REQUIRED-INPUT
-    fallback: REQUIRED-INPUT
-  economy:
-    primary: REQUIRED-INPUT
-    fallback: REQUIRED-INPUT
+  reasoning-max:                 # implementers/architects — Anthropic family
+    primary: anthropic/claude-fable-5
+    fallback: anthropic/claude-opus-4-8
+  standard:                      # reviewers incl. SAT — OpenAI family in BOTH slots,
+    primary: openai/gpt-5.6-sol  # so MODEL-001 decorrelation vs reasoning-max holds
+    fallback: openai/gpt-5.5     # even during fallback windows
+  economy:                       # dormant/light roles
+    primary: anthropic/claude-haiku-4-5
+    fallback: openai/gpt-5.6-luna
 rules:
   - id: MODEL-001
     text: SAT resolves to a different model family than the implementer of the same artifact.

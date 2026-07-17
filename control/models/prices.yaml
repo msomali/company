@@ -1,9 +1,11 @@
-# Estimated-cost table — v2 §81 Mode S (ACTIVE, ADR-B003): the dispatcher meters EVERY call against these rates; filling this is part of B0.3. (Under Mode P the proxy reports billed cost instead.)
+# Estimated-cost table — v2 §81 Mode S (ACTIVE, ADR-B003): the dispatcher meters EVERY call against these rates; filled as part of B0.3. (Under Mode P the proxy reports billed cost instead.)
 # Rates in USD per million tokens; update on provider price changes (record date).
-as_of: REQUIRED-INPUT
+as_of: 2026-07-16
 models:
-  anthropic/reasoning-max-model:  {input_per_mtok: REQUIRED-INPUT, output_per_mtok: REQUIRED-INPUT}
-  anthropic/standard-model:       {input_per_mtok: REQUIRED-INPUT, output_per_mtok: REQUIRED-INPUT}
-  openai/standard-model:          {input_per_mtok: REQUIRED-INPUT, output_per_mtok: REQUIRED-INPUT}
-  openai/economy-model:           {input_per_mtok: REQUIRED-INPUT, output_per_mtok: REQUIRED-INPUT}
-note: Mode S costs are ESTIMATES for budgeting/attribution; provider billing is account-level.
+  anthropic/claude-fable-5:   {input_per_mtok: 10.00, output_per_mtok: 50.00}
+  anthropic/claude-opus-4-8:  {input_per_mtok: 5.00,  output_per_mtok: 25.00}
+  anthropic/claude-haiku-4-5: {input_per_mtok: 1.00,  output_per_mtok: 5.00}
+  openai/gpt-5.6-sol:         {input_per_mtok: 5.00,  output_per_mtok: 30.00}
+  openai/gpt-5.5:             {input_per_mtok: 5.00,  output_per_mtok: 30.00}
+  openai/gpt-5.6-luna:        {input_per_mtok: 1.00,  output_per_mtok: 6.00}
+note: Mode S costs are ESTIMATES for budgeting/attribution; provider billing is account-level. Rates cross-checked against provider pricing pages on the as_of date; re-verify whenever a policy model changes.
