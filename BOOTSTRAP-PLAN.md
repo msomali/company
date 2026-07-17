@@ -9,7 +9,7 @@ Rules of execution: BA-5. Prohibitions: BA-2. One task = one branch = one PR.
 - [ ] B0.4 (H) §51 owner + channel filled; §86 register signed
 - [x] B1.1 (A) Repo initialized with this kit; digest extracted — PR #3 merged 2026-07-16
 - [x] B1.2 (H-EXEC) Branch protection + CODEOWNERS + required checks applied — spec PR #4; Phase 1 evidence PR #5; CODEOWNERS PR #7 (ADR-B005); Phase 2 checks row closes with B1.3
-- [ ] B1.3 (A) CI: frontmatter-lint, handoff-check, secret-scan implemented and green
+- [x] B1.3 (A) CI: frontmatter-lint, handoff-check, secret-scan implemented and green — PR #8 merged 2026-07-16; checks required+strict (B1.2 Phase 2, PR #9)
 - [ ] B2.1 (A) LiteLLM compose/config authored (dormant Mode P fallback; secret names only)
 - [ ] B2.2 (H-EXEC) CONDITIONAL — only on Mode P reactivation ADR; else mark N/A-dormant at §87
 - [ ] B3.1 (A) Manifest generator + tests

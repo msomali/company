@@ -1,0 +1,46 @@
+# Mode P proxy config — DORMANT (ADR-B003). Mirrors ../policies.yaml (B0.3,
+# owner-filled). Secret NAMES only via os.environ references.
+# Policy names are the §81 trio; *-fallback aliases carry MODEL-002 routing.
+model_list:
+  - model_name: reasoning-max
+    litellm_params:
+      model: anthropic/claude-fable-5
+      api_key: os.environ/PROVIDER_KEY_PRIMARY
+  - model_name: reasoning-max-fallback
+    litellm_params:
+      model: anthropic/claude-opus-4-8
+      api_key: os.environ/PROVIDER_KEY_PRIMARY
+  - model_name: standard
+    litellm_params:
+      model: openai/gpt-5.6-sol
+      api_key: os.environ/PROVIDER_KEY_SECONDARY
+  - model_name: standard-fallback
+    litellm_params:
+      model: openai/gpt-5.5                    # same family in both slots —
+      api_key: os.environ/PROVIDER_KEY_SECONDARY  # MODEL-001 decorrelation holds in fallback
+  - model_name: economy
+    litellm_params:
+      model: anthropic/claude-haiku-4-5
+      api_key: os.environ/PROVIDER_KEY_PRIMARY
+  - model_name: economy-fallback
+    litellm_params:
+      model: openai/gpt-5.6-luna
+      api_key: os.environ/PROVIDER_KEY_SECONDARY
+
+router_settings:
+  fallbacks:
+    - reasoning-max: ["reasoning-max-fallback"]
+    - standard: ["standard-fallback"]
+    - economy: ["economy-fallback"]
+  num_retries: 2                # transient/rate-limit retry ceiling (v2 §82.3)
+
+general_settings:
+  master_key: os.environ/LITELLM_MASTER_KEY
+  database_url: os.environ/DATABASE_URL       # postgres service in docker-compose.yaml
+
+litellm_settings:
+  drop_params: true             # provider-specific params dropped, not fatal
+  json_logs: true               # episode collector (B4.4) consumes these
+  # Budget alerting at reactivation: thresholds 0.60/0.85 from
+  # ../policies.yaml mode_p.budget_alert_thresholds; webhook is
+  # REQUIRED-INPUT (ALERT_WEBHOOK_URL in /etc/company/proxy.env).

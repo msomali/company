@@ -1,0 +1,42 @@
+# Mode P proxy — DORMANT (ADR-B003). B2.1 artifact; started only at B2.2 under
+# an owner-approved reactivation ADR. Secret NAMES only; values live in
+# /etc/company/proxy.env (host, root:root 600), created at reactivation.
+# The `mode-p` profile is a dormancy guard: `docker compose up` starts nothing
+# unless `--profile mode-p` is passed explicitly.
+services:
+  litellm:
+    image: ghcr.io/berriai/litellm:main-v1.72.6-stable   # pinned; bump via PR only
+    profiles: ["mode-p"]
+    restart: "no"                                        # dormant fallback — never auto-resurrect
+    ports:
+      - "127.0.0.1:4000:4000"                            # loopback only (v2 §85.3)
+    volumes:
+      - ./litellm-config.yaml:/app/config.yaml:ro
+    command: ["--config", "/app/config.yaml", "--port", "4000"]
+    env_file:
+      - /etc/company/proxy.env    # LITELLM_MASTER_KEY, PROVIDER_KEY_PRIMARY,
+                                  # PROVIDER_KEY_SECONDARY, DATABASE_URL,
+                                  # PROXY_DB_PASSWORD (names in SECRETS-MANIFEST)
+    depends_on:
+      db:
+        condition: service_healthy
+
+  db:
+    image: postgres:16.4-alpine   # pinned; virtual-key store
+    profiles: ["mode-p"]
+    restart: "no"
+    environment:
+      POSTGRES_DB: litellm
+      POSTGRES_USER: litellm
+      POSTGRES_PASSWORD: ${PROXY_DB_PASSWORD:?set in /etc/company/proxy.env}
+    volumes:
+      - litellm-db:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U litellm"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    # no ports: DB reachable only on the compose network
+
+volumes:
+  litellm-db:
