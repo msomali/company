@@ -1,12 +1,12 @@
 # v2.4 §80 as amended by ADR-B000 (single bot identity).
-# REQUIRED-INPUT: replace <HUMAN> with the owner's GitHub handle.
+# REQUIRED-INPUT: replace @msomali with the owner's GitHub handle.
 /projects/**/src/       @agenticfoundrybot
 /projects/**/tests/     @agenticfoundrybot
 /projects/**/requirements/  @agenticfoundrybot
-/projects/**/releases/  @agenticfoundrybot <HUMAN>
-/control/**             <HUMAN>
-/company/**             <HUMAN>
-/memory/org/**          <HUMAN>
-/memory/roles/**        <HUMAN>
-# All gate paths require review from <HUMAN> (the human owner) — required-review
+/projects/**/releases/  @agenticfoundrybot @msomali
+/control/**             @msomali
+/company/**             @msomali
+/memory/org/**          @msomali
+/memory/roles/**        @msomali
+# All gate paths require review from @msomali (the human owner) — required-review
 # setting blocks agenticfoundrybot from approving its own authored PRs.
