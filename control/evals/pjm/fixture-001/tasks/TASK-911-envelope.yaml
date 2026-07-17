@@ -1,0 +1,17 @@
+# Golden PJM output for PJM-GT-001: the decomposed SDE envelope.
+task_id: TASK-911
+project_id: PROJECT-000
+requested_by: PJM
+assigned_role: SDE
+objective: Implement slugify(title) per FR-900 with edge-case tests.
+business_context: FR-900 requires URL-safe slugs for artifact titles.
+acceptance_criteria:
+  - FR-900 unicode folding handled (verified by tests)
+  - FR-900 separator trimming handled (verified by tests)
+  - property tests included and deterministic
+required_outputs: [src/slugify.py, tests/test_slugify.py]
+risk_class: low
+tier: T1
+data_classification: internal
+priority: medium
+budgets: {wall_clock_minutes: 30, tool_call_limit: 25, model_budget_tag: eval}

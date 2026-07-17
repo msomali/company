@@ -1,6 +1,8 @@
 # Golden task pattern — deterministic checks only in Phase 1 (v2.1 §84).
 case_id: SDE-GT-001
 description: Implement a pure function with tests from a minimal T1 envelope.
+fixture: fixture-001   # golden solution during bootstrap; agent output later
+expect: pass
 input_envelope:
   task_id: TASK-900
   project_id: PROJECT-000
@@ -17,7 +19,7 @@ input_envelope:
 checks:
   - {kind: file_exists,   path: src/slugify.py}
   - {kind: file_exists,   path: tests/test_slugify.py}
-  - {kind: command_passes, cmd: "pytest -q tests/test_slugify.py"}
+  - {kind: command_passes, cmd: "{python} -m pytest -q tests/test_slugify.py"}
   - {kind: frontmatter_valid, glob: "**/*.md"}
   - {kind: forbidden_pattern_absent, pattern: "(?i)api[_-]?key\\s*[:=]"}
   - {kind: budget_respected, field: tool_call_limit}
