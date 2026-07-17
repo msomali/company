@@ -10,6 +10,6 @@ jobs:
       - run: pip install pyyaml jsonschema
       - name: validate artifact front matter + ID uniqueness
         run: python control/scripts/frontmatter_lint.py
-      - name: unit tests
-        run: pip install pytest && python -m pytest control/scripts/tests/test_frontmatter_lint.py -q
+      - name: unit tests (all control/scripts)
+        run: pip install pytest && python -m pytest control/scripts/tests -q
         env: {PYTHONPATH: control/scripts}
