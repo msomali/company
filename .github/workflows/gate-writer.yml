@@ -40,4 +40,4 @@ jobs:
       - name: emit gate record + open gate PR
         run: python control/scripts/gate_writer.py
         env:
-          GH_TOKEN: *** secrets.GH_TOKEN_AGENTICFOUNDRYBOT }}
+          GH_TOKEN: ${{ secrets.GH_TOKEN_AGENTICFOUNDRYBOT }}

@@ -10,6 +10,8 @@ jobs:
       - run: pip install pyyaml jsonschema
       - name: validate artifact front matter + ID uniqueness
         run: python control/scripts/frontmatter_lint.py
+      - name: workflow files parse and are well-formed (B5.2 fix, 2026-07-17)
+        run: python control/scripts/workflow_lint.py
       - name: unit tests (all control/scripts)
         run: pip install pytest && python -m pytest control/scripts/tests -q
         env: {PYTHONPATH: control/scripts}
