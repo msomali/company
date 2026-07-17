@@ -14,7 +14,7 @@ Rules of execution: BA-5. Prohibitions: BA-2. One task = one branch = one PR.
 - [ ] B2.2 (H-EXEC) CONDITIONAL — only on Mode P reactivation ADR; else mark N/A-dormant at §87
 - [ ] B3.1 (A) Manifest generator + tests
 - [x] B3.2 (A) 13 manifests authored; agent files generated (NOT activated) — PR #12 merged 2026-07-16
-- [ ] B4.1 (A) task-create + schemas/task.json + rejection tests
+- [x] B4.1 (A) task-create + schemas/task.json + rejection tests — PR #13 merged 2026-07-16
 - [ ] B4.2 (A) Dispatcher per §82 + tests
 - [ ] B4.3 (H-EXEC) Dispatcher systemd unit installed under `dispatcher` user
 - [ ] B4.4 (A) Episode collector + kill-switch script
