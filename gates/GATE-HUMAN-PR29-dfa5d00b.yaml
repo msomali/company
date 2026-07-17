@@ -1,0 +1,16 @@
+# Gate Decision Record (v2 §8) — emitted by gate-writer (B5.2)
+gate_id: GATE-HUMAN-PR29-dfa5d00b
+artifact_or_release: 'PR #29: B6.2: incident, skill-review, advisory-review SOPs finalized'
+gate_owner: HUMAN
+decision: APPROVED
+criteria_version: v2§8/v1§15 handoff rev 1
+evidence:
+- https://github.com/msomali/company/pull/29
+- https://github.com/msomali/company/pull/29#pullrequestreview-4726415410
+- merge:dfa5d00befc3a3e94cc5ff4d9f3f3d328f63873e
+findings: []
+conditions: []
+expires: null
+next_owner: Human owner (review + merge).
+decided_at: '2026-07-17T22:06:17Z'
+approval_message_ref: https://github.com/msomali/company/pull/29#pullrequestreview-4726415410
