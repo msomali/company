@@ -1,4 +1,4 @@
-name: frontmatter-lint   # POL-004 — SKELETON, implemented in B1.3
+name: frontmatter-lint   # POL-004 — implemented in B1.3
 on: [pull_request]
 jobs:
   lint:
@@ -9,4 +9,7 @@ jobs:
         with: {python-version: '3.11'}
       - run: pip install pyyaml jsonschema
       - name: validate artifact front matter + ID uniqueness
-        run: python control/scripts/frontmatter_lint.py  # TODO(B1.3): implement against control/schemas/frontmatter.json
+        run: python control/scripts/frontmatter_lint.py
+      - name: unit tests
+        run: pip install pytest && python -m pytest control/scripts/tests/test_frontmatter_lint.py -q
+        env: {PYTHONPATH: control/scripts}

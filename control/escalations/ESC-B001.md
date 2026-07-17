@@ -7,7 +7,7 @@ owner: bootstrap
 contributors: [bootstrap]
 reviewers: [human-owner]
 version: "1.1"
-status: RESOLVED
+status: APPROVED
 sensitivity: internal
 created: 2026-07-15
 updated: 2026-07-16

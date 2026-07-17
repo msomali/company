@@ -1,9 +1,11 @@
 name: gate-writer   # v2.1 §78-4 — SKELETON, implemented in B5.2
-on:
-  pull_request: {types: [closed]}
+# Gated to manual dispatch until B5.2 implements the writer — same rationale as
+# eval-runner (it would fail red on EVERY merge). B5.2 restores:
+#   on:
+#     pull_request: {types: [closed]}
+on: [workflow_dispatch]
 jobs:
   gate:
-    if: github.event.pull_request.merged == true
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4

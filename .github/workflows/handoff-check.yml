@@ -1,9 +1,16 @@
-name: handoff-check   # POL-005 — SKELETON, implemented in B1.3
-on: [pull_request]
+name: handoff-check   # POL-005 — implemented in B1.3
+on:
+  pull_request:
+    types: [opened, edited, synchronize, reopened]   # re-run when the body is edited
 jobs:
   handoff:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.11'}
       - name: all ten handoff sections non-empty in PR body
-        run: python control/scripts/handoff_check.py  # TODO(B1.3): read PR body via GITHUB_EVENT_PATH; fail on empty sections
+        run: python control/scripts/handoff_check.py
+      - name: unit tests
+        run: pip install pytest && python -m pytest control/scripts/tests/test_handoff_check.py -q
+        env: {PYTHONPATH: control/scripts}

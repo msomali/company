@@ -1,3 +1,19 @@
+---
+artifact_id: control/adr/ADR-B005-codeowners-dual-control.md
+title: ADR-B005 — CODEOWNERS dual-control co-ownership on owner-input paths
+type: adr
+project: control
+owner: human-owner
+contributors: [bootstrap, human-owner]
+reviewers: [human-owner]
+version: "1.0"
+status: APPROVED
+sensitivity: internal
+created: 2026-07-16
+updated: 2026-07-16
+approval: owner (merge of PR #7, 2026-07-16)
+---
+
 # ADR-B005 — CODEOWNERS dual-control co-ownership on owner-input paths
 Decision: `/control/**`, `/company/**`, `/memory/org/**`, `/memory/roles/**` are
 co-owned by @msomali and @agenticfoundrybot. Sole human ownership made
