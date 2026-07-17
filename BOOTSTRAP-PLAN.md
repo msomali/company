@@ -6,7 +6,7 @@ Rules of execution: BA-5. Prohibitions: BA-2. One task = one branch = one PR.
 - [x] B0.1 (H) Hardening §85 complete, evidence committed — `control/sops/hardening-evidence.md` (owner-attested 2026-07-15; rows 4/9 open by progressive design, close pre-§87)
 - [x] B0.2 (H) Forge org, machine accounts, tokens placed per BA-3 — repo + `agenticfoundrybot` live; PAT placement per ADR-B002 (classic PAT deviation recorded in evidence row 6)
 - [x] B0.3 (H) Provider subscriptions confirmed + OAuth sign-ins done (D5 resolved per ADR-B003); policies.yaml (mode: S) + prices.yaml filled — PR #6 merged 2026-07-16
-- [ ] B0.4 (H) §51 owner + channel filled; §86 register signed
+- [x] B0.4 (H) §51 owner + channel filled; §86 register signed
 - [x] B1.1 (A) Repo initialized with this kit; digest extracted — PR #3 merged 2026-07-16
 - [x] B1.2 (H-EXEC) Branch protection + CODEOWNERS + required checks applied — spec PR #4; Phase 1 evidence PR #5; CODEOWNERS PR #7 (ADR-B005); Phase 2 checks row closes with B1.3
 - [x] B1.3 (A) CI: frontmatter-lint, handoff-check, secret-scan implemented and green — PR #8 merged 2026-07-16; checks required+strict (B1.2 Phase 2, PR #9)

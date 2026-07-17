@@ -50,7 +50,7 @@
       "type": "string"
     },
     "pilot_status": {
-      "enum": ["ACTIVE", "ON-DEMAND", "DORMANT"]
+      "enum": ["ACTIVE", "ON-DEMAND", "HUMAN-HELD", "DORMANT"]
     },
     "allowed_tools": {
       "type": "array",

@@ -13,3 +13,5 @@ jobs:
       - name: unit tests (all control/scripts)
         run: pip install pytest && python -m pytest control/scripts/tests -q
         env: {PYTHONPATH: control/scripts}
+      - name: manifest generator determinism (_generated matches manifests)
+        run: python control/scripts/manifest_generator.py --check
