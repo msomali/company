@@ -1,12 +1,14 @@
-# v2.4 §80 as amended by ADR-B000 (single bot identity).
-# REQUIRED-INPUT: replace <HUMAN> with the owner's GitHub handle.
+# v2.4 §80 as amended by ADR-B000 (single bot identity) and ADR-B005 (dual-control
+# co-ownership on owner-input gate paths). Owner handle filled 2026-07-16 (B1.2).
 /projects/**/src/       @agenticfoundrybot
 /projects/**/tests/     @agenticfoundrybot
 /projects/**/requirements/  @agenticfoundrybot
-/projects/**/releases/  @agenticfoundrybot <HUMAN>
-/control/**             <HUMAN>
-/company/**             <HUMAN>
-/memory/org/**          <HUMAN>
-/memory/roles/**        <HUMAN>
-# All gate paths require review from <HUMAN> (the human owner) — required-review
-# setting blocks agenticfoundrybot from approving its own authored PRs.
+/projects/**/releases/  @agenticfoundrybot @msomali
+/control/**             @msomali @agenticfoundrybot
+/company/**             @msomali @agenticfoundrybot
+/memory/org/**          @msomali @agenticfoundrybot
+/memory/roles/**        @msomali @agenticfoundrybot
+# Dual-control invariant (ADR-B005): GitHub blocks PR authors from approving their
+# own PRs, so every gate-path merge carries two distinct identities — bot-authored
+# PRs still require @msomali; owner-authored PRs are satisfied by @agenticfoundrybot
+# review. Never add identities beyond these two (ADR-B000).
