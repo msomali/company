@@ -75,6 +75,19 @@ gh api -X PATCH repos/msomali/company/branches/main/protection/required_status_c
 
 ## Phase E — evidence read-back (owner; paste output below)
 
+{
+  "checks": null,
+  "conversation": true,
+  "deletions": false,
+  "enforce_admins": true,
+  "force_pushes": false,
+  "reviews": {
+    "code_owners": false,
+    "count": 1,
+    "dismiss_stale": true
+  }
+}
+
 ```bash
 gh api repos/msomali/company/branches/main/protection \
   --jq '{enforce_admins:.enforce_admins.enabled,
@@ -96,5 +109,5 @@ REQUIRED-INPUT (owner): paste Phase E output after Phase 1 here
 REQUIRED-INPUT (owner): paste Phase E output after Phase 2 here
 ```
 
-Attested by: REQUIRED-INPUT (owner) — on commit of Phase 1 evidence, B1.2 is
+Attested by: msomali, 2026-07-16 — on commit of Phase 1 evidence, B1.2 is
 complete except the Phase 2 checks row, which closes with B1.3.
