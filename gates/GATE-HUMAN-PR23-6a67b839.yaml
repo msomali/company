@@ -1,0 +1,16 @@
+# Gate Decision Record (v2 §8) — emitted by gate-writer (B5.2)
+gate_id: GATE-HUMAN-PR23-6a67b839
+artifact_or_release: 'PR #23: B5.2: gate-writer CI emits gates/GATE-*.yaml on merge'
+gate_owner: HUMAN
+decision: APPROVED
+criteria_version: v2§8/v1§15 handoff rev 1
+evidence:
+- https://github.com/msomali/company/pull/23
+- https://github.com/msomali/company/pull/23#pullrequestreview-4725426561
+- merge:6a67b839e67ed5ab64c8d0668bc57914909c6dc5
+findings: []
+conditions: []
+expires: null
+next_owner: Human owner (review + merge; then merge the first auto gate PR).
+decided_at: '2026-07-17T19:10:57Z'
+approval_message_ref: https://github.com/msomali/company/pull/23#pullrequestreview-4725426561
