@@ -146,6 +146,10 @@
         "model_budget_tag": {
           "type": "string"
         },
+        "model_cost_limit_usd": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
         "retries": {
           "type": "integer",
           "minimum": 0,
