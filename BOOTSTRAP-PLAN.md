@@ -19,8 +19,8 @@ Rules of execution: BA-5. Prohibitions: BA-2. One task = one branch = one PR.
 - [x] B4.3 (H-EXEC) Dispatcher systemd unit installed under `dispatcher` user — spec PR #17; owner install evidence + deploy-key rider PR #20; rider fold PR #18 (all merged 2026-07-17)
 - [x] B4.4 (A) Episode collector + kill-switch script — PR #19 merged 2026-07-17; hardening row 9 stays open until the owner runs `control/sops/killswitch-drill.md` (row closes on the drill, not the merge — owner direction 2026-07-17)
 - [x] B5.1 (A) Eval runner + golden tasks (PJM, SDE, SAT, DCE); seeded failure blocks — PR #22 merged 2026-07-17
-- [ ] B5.2 (A) Gate-writer CI emits gates/GATE-*.yaml on merge
-- [ ] B6.1 (A) /memory tree + gated write path + purge script
+- [x] B5.2 (A) Gate-writer CI emits gates/GATE-*.yaml on merge — PRs #23/#24/#25 merged 2026-07-17; live demo + #23/#24 backfills recorded (gates/), recursion guard held
+- [x] B6.1 (A) /memory tree + gated write path + purge script — PR #27 merged 2026-07-17 (seed record MEM-ORG-0001)
 - [ ] B6.2 (A) SOPs finalized
 - [ ] B6.3 (A) Weekly metrics script + first report
 - [ ] B7.1 (H) PROJECT-000 charter signed
