@@ -27,8 +27,10 @@ SCHEMA_PATH = REPO_ROOT / "control" / "schemas" / "frontmatter.json"
 # Directories whose Markdown artifacts must carry front matter (v1.1 §52.3).
 REQUIRED_FM_DIRS = ("control/adr", "control/escalations")
 
-# Trees never linted: canonical handoff docs and git internals.
-EXCLUDED_TOP_LEVEL = (".git", "handoff")
+# Trees never linted: canonical handoff docs, git internals, and the /memory
+# tree — memory records carry §28 front matter validated by memory_lint.py
+# against control/schemas/memory.json (B6.1), not the artifact schema.
+EXCLUDED_TOP_LEVEL = (".git", "handoff", "memory")
 
 
 def iter_markdown_files(root: Path):
