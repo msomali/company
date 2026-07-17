@@ -86,10 +86,6 @@ gh api repos/msomali/company/branches/main/protection \
 
 ### Evidence — Phase 1 (owner paste + date)
 
-```
-REQUIRED-INPUT (owner): paste Phase E output after Phase 1 here
-```
-
 {
   "checks": null,
   "conversation": true,
@@ -107,9 +103,33 @@ Attested by: msomali, 2026-07-16
 
 ### Evidence — Phase 2 (owner paste + date, at B1.3)
 
-```
-REQUIRED-INPUT (owner): paste Phase E output after Phase 2 here
-```
+{
+  "checks": {
+    "checks": [
+      {
+        "app_id": 15368,
+        "context": "lint"
+      },
+      {
+        "app_id": 15368,
+        "context": "handoff"
+      },
+      {
+        "app_id": 15368,
+        "context": "gitleaks"
+      }
+    ],
+    "contexts": [
+      "lint",
+      "handoff",
+      "gitleaks"
+    ],
+    "contexts_url": "https://api.github.com/repos/msomali/company/branches/main/protection/required_status_checks/contexts",
+    "strict": true,
+    "url": "https://api.github.com/repos/msomali/company/branches/main/protection/required_status_checks"
+  }
+}
 
-Attested by: msomali, 2026-07-16 — on commit of Phase 1 evidence, B1.2 is
-complete except the Phase 2 checks row, which closes with B1.3.
+Attested by: msomali, 2026-07-16 — Phase 1 and Phase 2 both applied and read back; B1.2 complete.
+
+Note: applied via full PUT — the spec's PATCH returns 404 while checks are null from Phase 1.
