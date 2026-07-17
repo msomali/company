@@ -97,6 +97,42 @@ def test_missing_event_is_benign():
     assert gw.main(["--event", "/nonexistent/event.json"]) == 0
 
 
+def test_replay_by_pr_number(tmp_path, monkeypatch):
+    """workflow_dispatch replay: no pull_request in the event — PR fetched
+    from the API by number (owner requirement after the consumed #23 event)."""
+    monkeypatch.setattr(gw, "gh_api", lambda path, token: pr_payload())
+    event = tmp_path / "event.json"
+    event.write_text(json.dumps({"inputs": {"pr_number": "42"}}))
+    rv = tmp_path / "reviews.json"
+    rv.write_text(json.dumps(reviews_payload()))
+    out = tmp_path / "gates"
+    code = gw.main(
+        ["--event", str(event), "--reviews", str(rv), "--out-dir", str(out)]
+    )
+    assert code == 0
+    assert (out / "GATE-SAT-PR42-abcdef01.yaml").is_file()
+
+
+def test_replay_cli_flag(tmp_path, monkeypatch):
+    monkeypatch.setattr(gw, "gh_api", lambda path, token: pr_payload())
+    rv = tmp_path / "reviews.json"
+    rv.write_text(json.dumps(reviews_payload()))
+    out = tmp_path / "gates"
+    code = gw.main(
+        ["--event", "/nonexistent", "--pr", "42", "--reviews", str(rv), "--out-dir", str(out)]
+    )
+    assert code == 0
+    assert list(out.glob("GATE-*.yaml"))
+
+
+def test_replay_fetch_failure_exits_1(tmp_path, monkeypatch):
+    def boom(path, token):
+        raise OSError("api down")
+
+    monkeypatch.setattr(gw, "gh_api", boom)
+    assert gw.main(["--event", "/nonexistent", "--pr", "42"]) == 1
+
+
 def test_role_claim_parsing():
     assert gw.claimed_role(["role: SAT\nverdict ok"]) == "SAT"
     assert gw.claimed_role(["GATE-DCE attribution here"]) == "DCE"

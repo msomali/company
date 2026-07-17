@@ -21,6 +21,9 @@ Modes:
   (CI)            gate_writer.py                    — full run: write, push, PR
   gate_writer.py --dry-run                          — build + validate + write only
   gate_writer.py --event <path> [--reviews <path>]  — offline inputs (tests)
+  gate_writer.py --pr <N> / workflow_dispatch pr_number — replay: fetch an
+                  already-merged PR from the API when its merge event was
+                  consumed (e.g. by a failed run)
 
 Exit 0 on success or benign skip (unmerged close, gate/ head, no event in a
 manual dispatch); exit 1 on real failure (invalid record, push/PR error).
@@ -185,20 +188,32 @@ def publish(record: dict, gate_path: Path, pr_number: int, token: str) -> None:
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description="Gate-writer (v2 §78 row 4)")
     ap.add_argument("--event", help="event payload JSON (default: $GITHUB_EVENT_PATH)")
+    ap.add_argument("--pr", help="replay: PR number to fetch from the API")
     ap.add_argument("--reviews", help="reviews JSON file (offline/testing)")
     ap.add_argument("--dry-run", action="store_true", help="write record only")
     ap.add_argument("--out-dir", help="output dir (default: gates/)")
     args = ap.parse_args(argv)
 
     event_path = args.event or os.environ.get("GITHUB_EVENT_PATH")
-    if not event_path or not Path(event_path).is_file():
-        print("gate-writer: no event payload (manual dispatch?) — nothing to do")
-        return 0
-    event = json.loads(Path(event_path).read_text(encoding="utf-8"))
+    event = {}
+    if event_path and Path(event_path).is_file():
+        event = json.loads(Path(event_path).read_text(encoding="utf-8"))
     pr = event.get("pull_request")
     if not pr:
-        print("gate-writer: event has no pull_request — nothing to do")
-        return 0
+        number = str(
+            args.pr or (event.get("inputs") or {}).get("pr_number") or ""
+        ).strip()
+        if not number:
+            print("gate-writer: no PR event and no pr_number — nothing to do")
+            return 0
+        token = os.environ.get("GH_TOKEN") or os.environ.get("GITHUB_TOKEN") or ""
+        repo = os.environ.get("GITHUB_REPOSITORY", "msomali/company")
+        try:
+            pr = gh_api(f"/repos/{repo}/pulls/{int(number)}", token)
+        except Exception as exc:  # noqa: BLE001 — replay is operator-driven
+            print(f"gate-writer: replay fetch of PR {number} failed: {exc}", file=sys.stderr)
+            return 1
+        print(f"gate-writer: replaying merged PR #{number}")
     if not pr.get("merged"):
         print("gate-writer: PR closed without merge — no gate record")
         return 0
