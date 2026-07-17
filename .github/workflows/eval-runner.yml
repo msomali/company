@@ -1,8 +1,11 @@
 name: eval-runner   # POL-006 — SKELETON, implemented in B5.1
-on:
-  pull_request:
-    paths: [control/prompts/**, control/manifests/**, control/policies/**]
-  schedule: [{cron: '0 3 * * *'}]
+# Gated to manual dispatch until B5.1 wires the runner (owner direction,
+# 2026-07-16): a permanently red check trains bad review habits. B5.1 restores:
+#   on:
+#     pull_request:
+#       paths: [control/prompts/**, control/manifests/**, control/policies/**]
+#     schedule: [{cron: '0 3 * * *'}]
+on: [workflow_dispatch]
 jobs:
   evals:
     runs-on: ubuntu-latest

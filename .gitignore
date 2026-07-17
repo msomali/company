@@ -12,3 +12,4 @@ MEMORY.md
 memory/
 openclaw-workspace-state.json
 .openclaw/
+__pycache__/

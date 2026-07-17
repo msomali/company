@@ -1,3 +1,19 @@
+---
+artifact_id: control/adr/ADR-B004-repo-visibility.md
+title: ADR-B004 — Repo public pending Pro (time-boxed)
+type: adr
+project: control
+owner: human-owner
+contributors: [human-owner]
+reviewers: [bootstrap]
+version: "1.0"
+status: APPROVED
+sensitivity: internal
+created: 2026-07-16
+updated: 2026-07-16
+approval: owner (PR #2, merged 2026-07-16)
+---
+
 # ADR-B004 — Repo public pending Pro (time-boxed)
 Decision: msomali/company remains public so branch protection (required review,
 enforce_admins) stays enforceable at zero cost; owner declines Pro for now.
