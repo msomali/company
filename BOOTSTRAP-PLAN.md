@@ -6,16 +6,16 @@ Rules of execution: BA-5. Prohibitions: BA-2. One task = one branch = one PR.
 - [x] B0.1 (H) Hardening §85 complete, evidence committed — `control/sops/hardening-evidence.md` (owner-attested 2026-07-15; rows 4/9 open by progressive design, close pre-§87)
 - [x] B0.2 (H) Forge org, machine accounts, tokens placed per BA-3 — repo + `agenticfoundrybot` live; PAT placement per ADR-B002 (classic PAT deviation recorded in evidence row 6)
 - [x] B0.3 (H) Provider subscriptions confirmed + OAuth sign-ins done (D5 resolved per ADR-B003); policies.yaml (mode: S) + prices.yaml filled — PR #6 merged 2026-07-16
-- [x] B0.4 (H) §51 owner + channel filled; §86 register signed
+- [x] B0.4 (H) §51 owner + channel filled; §86 register signed — PR #16 merged 2026-07-17 (tick predated artifact; provenance recorded in PR #16 §5 and lesson L-001)
 - [x] B1.1 (A) Repo initialized with this kit; digest extracted — PR #3 merged 2026-07-16
 - [x] B1.2 (H-EXEC) Branch protection + CODEOWNERS + required checks applied — spec PR #4; Phase 1 evidence PR #5; CODEOWNERS PR #7 (ADR-B005); Phase 2 checks row closes with B1.3
 - [x] B1.3 (A) CI: frontmatter-lint, handoff-check, secret-scan implemented and green — PR #8 merged 2026-07-16; checks required+strict (B1.2 Phase 2, PR #9)
-- [ ] B2.1 (A) LiteLLM compose/config authored (dormant Mode P fallback; secret names only)
+- [x] B2.1 (A) LiteLLM compose/config authored (dormant Mode P fallback; secret names only) — PR #10 merged 2026-07-16 (tick restored by L-001 audit; original tick claimed in 67ad1502 but never landed)
 - [ ] B2.2 (H-EXEC) CONDITIONAL — only on Mode P reactivation ADR; else mark N/A-dormant at §87
-- [ ] B3.1 (A) Manifest generator + tests
+- [x] B3.1 (A) Manifest generator + tests — PR #11 merged 2026-07-16 (tick restored by L-001 audit; original tick claimed in 67ad1502 but never landed)
 - [x] B3.2 (A) 13 manifests authored; agent files generated (NOT activated) — PR #12 merged 2026-07-16
 - [x] B4.1 (A) task-create + schemas/task.json + rejection tests — PR #13 merged 2026-07-16
-- [ ] B4.2 (A) Dispatcher per §82 + tests
+- [x] B4.2 (A) Dispatcher per §82 + tests — PR #14 (core) + PR #15 (approvals/metering) merged 2026-07-17
 - [ ] B4.3 (H-EXEC) Dispatcher systemd unit installed under `dispatcher` user
 - [ ] B4.4 (A) Episode collector + kill-switch script
 - [ ] B5.1 (A) Eval runner + golden tasks (PJM, SDE, SAT, DCE); seeded failure blocks

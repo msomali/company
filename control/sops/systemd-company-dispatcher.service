@@ -1,0 +1,34 @@
+# company-dispatcher.service — B4.3 (H-EXEC). Install per
+# control/sops/dispatcher-install.md. Runs as OS user `dispatcher`,
+# outside OpenClaw (BA-1.4).
+[Unit]
+Description=Company dispatcher (v2 §82) — task state, approvals, metering
+Documentation=file:///srv/company/repo/control/sops/dispatcher-install.md
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=dispatcher
+Group=dispatcher
+WorkingDirectory=/srv/company/repo
+EnvironmentFile=/etc/company/dispatcher.env
+ExecStart=/srv/company/venv/bin/python control/scripts/dispatcher_runtime.py --daemon --interval 60
+Restart=on-failure
+RestartSec=10
+
+# Hardening (v2 §85 spirit: least privilege, no surprises)
+NoNewPrivileges=yes
+ProtectSystem=strict
+ProtectHome=yes
+PrivateTmp=yes
+PrivateDevices=yes
+ProtectKernelTunables=yes
+ProtectControlGroups=yes
+RestrictSUIDSGID=yes
+LockPersonality=yes
+MemoryMax=1G
+ReadWritePaths=/srv/company/repo
+
+[Install]
+WantedBy=multi-user.target
