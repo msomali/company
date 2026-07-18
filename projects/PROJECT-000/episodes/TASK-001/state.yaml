@@ -1,0 +1,10 @@
+task_id: TASK-001
+state: INTAKE
+run_id: null
+iteration_count: 0
+rejection_cycles: 0
+history:
+- at: '2026-07-18T17:13:30Z'
+  from: NONE
+  to: INTAKE
+  evidence: task-create from envelope-check1-valid-t2.yaml
