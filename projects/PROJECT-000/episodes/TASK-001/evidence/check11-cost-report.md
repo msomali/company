@@ -48,6 +48,22 @@ All three recorded as B7.4 friction; 1–2 fixed in the metrics fix PR
 (§78 mechanism fix per §88's friction rule); post-fix run shows the task's
 tokens/cost — see the fix PR and re-run output appended below.
 
-## Post-fix run
+## Post-fix run (fix PR #63, branch bootstrap/metrics-episode-paths)
 
-(appended after fix) — see commit referenced in the check-11 report.
+Fixed `metrics_weekly.py` run against this worktree (`--until 2026-07-18`,
+`--out /tmp` to avoid clobbering the committed B6.3 W29 artifact — same
+ISO week, filename collision noted in the fix PR):
+
+    | Episode packages in window | 1 |
+    | Task latency median (min) | 303.7 |
+    | Metered tokens (in/out) | 3456 / 2531 |
+    | Estimated cost (USD, Mode S) | 0.1611 |
+
+The cost report now shows TASK-001's metered tokens and estimated cost,
+sourced from the episode's usage.yaml (record-time pricing via
+prices.yaml). Agent attribution: documented call order (SDE call 1, SAT
+call 2) — per-agent field remains the deferred friction item.
+
+- Result: **PASS** — metering leg green (usage recorded, priced, ceiling
+  enforced); reporting leg green on the fixed mechanism, with the pre-fix
+  zero-report preserved above as the friction evidence.
