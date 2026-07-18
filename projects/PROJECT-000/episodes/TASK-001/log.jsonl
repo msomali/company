@@ -2,3 +2,4 @@
 {"at": "2026-07-18T21:16:01Z", "event": "transition", "evidence": "acceptance criteria fixed in task.yaml: unicode folding, separator trimming, deterministic property tests (envelope of record)", "frm": "DISCOVERY", "to": "REQUIREMENTS"}
 {"at": "2026-07-18T21:16:01Z", "event": "transition", "evidence": "design recorded: notes/slugify-implementation.md 'Approach' (NFKD fold + ascii round-trip + single-regex collapse), merged via PR #53", "frm": "REQUIREMENTS", "to": "DESIGN"}
 {"at": "2026-07-18T21:16:01Z", "event": "transition", "evidence": "delivery plan = PR #53 handoff package sections 1-4 (branch sde/TASK-001-slugify, opened 2026-07-18)", "frm": "DESIGN", "to": "DELIVERY_PLAN"}
+{"at": "2026-07-18T21:16:01Z", "event": "transition", "evidence": "implementation commits b3a22a2..a31c274d on PR #53: src/slugify.py + tests/test_slugify.py (516 tests initial, 521 after SAT-53-F1)", "frm": "DELIVERY_PLAN", "to": "IMPLEMENTATION"}
