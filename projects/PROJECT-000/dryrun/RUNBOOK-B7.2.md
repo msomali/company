@@ -111,3 +111,10 @@ superseded by PR-body claim + workflow_dispatch replay → `GATE-SAT-PR53`.
   comments are invisible to `claimed_role()`. Deferred activation-era
   hardening candidate: extend `claimed_role()` to scan issue comments so
   the two mechanisms compose mechanically.
+- (check 7 replay, 2026-07-18) gate-writer's replay cannot overwrite an
+  existing `gate/pr-N` branch: the CI clone lacks a remote-tracking ref for
+  it, so `--force-with-lease` rejects with "stale info" (run 29656689445 —
+  record built correctly, publish failed). Workaround: operator deletes the
+  stale branch (closing its gate PR unmerged) and re-dispatches; the fresh
+  create then succeeds. Fix candidate (deferred): fetch the gate branch ref
+  before pushing, or drop the lease on the replay path.
