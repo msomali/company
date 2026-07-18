@@ -1,0 +1,21 @@
+# §88 check 1 fixture — valid T2 envelope. task_id deliberately absent:
+# task-create allocates it (§82.1).
+project_id: PROJECT-000
+requested_by: PJM
+assigned_role: SDE
+objective: Implement slugify(title) per charter scope with edge-case and property tests.
+business_context: PROJECT-000 synthetic dry run — exercises every Phase 1 mechanism (charter scope).
+acceptance_criteria:
+  - handles unicode folding (tests prove it)
+  - trims separators (tests prove it)
+  - property tests included and deterministic
+required_outputs: [src/slugify.py, tests/test_slugify.py]
+risk_class: low
+tier: T2
+data_classification: internal
+priority: medium
+budgets:
+  wall_clock_minutes: 120
+  tool_call_limit: 100
+  model_budget_tag: dryrun
+  model_cost_limit_usd: 5.0

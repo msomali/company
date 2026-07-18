@@ -1,0 +1,18 @@
+# §88 check 12 fixture — breaker: tool_call_limit 1. The second tool action
+# must halt the task BLOCKED with evidence, without retry-looping.
+project_id: PROJECT-000
+requested_by: PJM
+assigned_role: SDE
+objective: Breaker probe — any two-step work under a one-tool-call budget.
+business_context: PROJECT-000 synthetic dry run — §88 check 12 (breaker).
+acceptance_criteria:
+  - task halts BLOCKED at the budget boundary with evidence
+required_outputs: [BLOCKED state + escalation evidence]
+risk_class: low
+tier: T2
+data_classification: internal
+priority: medium
+budgets:
+  wall_clock_minutes: 30
+  tool_call_limit: 1
+  model_budget_tag: dryrun
