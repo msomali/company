@@ -4,7 +4,7 @@ title: B7.2 dry-run runbook — §88 checks 1–5, 7, 10–14 (joint)
 type: runbook
 project: PROJECT-000
 owner: bootstrap agent (agenticfoundrybot)
-version: "1.3"
+version: "1.4"
 status: READY_FOR_REVIEW
 sensitivity: internal
 created: "2026-07-17"
@@ -118,6 +118,26 @@ superseded by PR-body claim + workflow_dispatch replay → `GATE-SAT-PR53`.
   checks 8/9 (after check 6's numbering jump). Remedied: RUNBOOK-B7.3.md
   authored from the implemented mechanisms (approvals.py, §51 register
   interim channel, state-machine prerequisites, release-branch setup).
+- (check 9, 2026-07-18) Runbook step "release PR head `main`" was
+  unexecutable: owner cut `release` at the `main` head, zero-delta PR
+  refused by GitHub. Promotion rode `rc/TASK-001` with the release-notes
+  artifact. Procedure note: cut `release` one commit behind, or always
+  promote via an rc branch.
+- (check 11, 2026-07-18) `metrics_weekly.collect_tasks` scanned only
+  `<root>/episodes/` — a layout no project uses — so the cost report
+  showed zeros against a metered episode. Fixed: scans
+  `projects/<P>/episodes/` too.
+- (check 11, 2026-07-18) usage.yaml format divergence: `metering.py`
+  writes totals + `calls:` int; `metrics_weekly` (and its test fixture)
+  expected a per-call list — iterating the int would crash. The modules
+  were never integrated until §88.11. Fixed: totals format is read
+  natively (record-time pricing respected); list form kept for compat;
+  calls-int regression test added.
+- (check 11, 2026-07-18) Per-agent usage gap: no mechanism records WHICH
+  agent consumed tokens — `record_usage` has no agent field, so §88.11's
+  "per-agent usage" is satisfied only by documented call order under
+  P2(b). Activation-era fix candidate: `agent` param on `record_usage` +
+  log event + usage.yaml per-agent rollup.
 - (check 7 replay, 2026-07-18) gate-writer's replay cannot overwrite an
   existing `gate/pr-N` branch: the CI clone lacks a remote-tracking ref for
   it, so `--force-with-lease` rejects with "stale info" (run 29656689445 —
