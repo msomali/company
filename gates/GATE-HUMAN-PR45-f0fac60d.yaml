@@ -1,0 +1,17 @@
+# Gate Decision Record (v2 §8) — emitted by gate-writer (B5.2)
+gate_id: GATE-HUMAN-PR45-f0fac60d
+artifact_or_release: 'PR #45: C7 lever: collaborator removal in kill-switch pause/restore
+  + incident SOP authority fix'
+gate_owner: HUMAN
+decision: APPROVED
+criteria_version: v2§8/v1§15 handoff rev 1
+evidence:
+- https://github.com/msomali/company/pull/45
+- https://github.com/msomali/company/pull/45#pullrequestreview-4727698785
+- merge:f0fac60da66b9aeb3ce58debab3021637f6ff7dd
+findings: []
+conditions: []
+expires: null
+next_owner: Human owner (review + merge; optional lever drill).
+decided_at: '2026-07-18T05:11:15Z'
+approval_message_ref: https://github.com/msomali/company/pull/45#pullrequestreview-4727698785
