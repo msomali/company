@@ -4,7 +4,7 @@ title: B7.2 dry-run runbook — §88 checks 1–5, 7, 10–14 (joint)
 type: runbook
 project: PROJECT-000
 owner: bootstrap agent (agenticfoundrybot)
-version: "1.2"
+version: "1.3"
 status: READY_FOR_REVIEW
 sensitivity: internal
 created: "2026-07-17"
@@ -111,6 +111,13 @@ superseded by PR-body claim + workflow_dispatch replay → `GATE-SAT-PR53`.
   comments are invisible to `claimed_role()`. Deferred activation-era
   hardening candidate: extend `claimed_role()` to scan issue comments so
   the two mechanisms compose mechanically.
+- (check 8/9 setup, 2026-07-18) Plan row B7.3 (checks 6/8/9, owner-solo)
+  existed with **no authored procedure anywhere in the repo** — same
+  failure class as ticks-without-artifacts (L-001/MEM-ORG-0001): a plan
+  row with no executable procedure. Caught by the owner when preparing
+  checks 8/9 (after check 6's numbering jump). Remedied: RUNBOOK-B7.3.md
+  authored from the implemented mechanisms (approvals.py, §51 register
+  interim channel, state-machine prerequisites, release-branch setup).
 - (check 7 replay, 2026-07-18) gate-writer's replay cannot overwrite an
   existing `gate/pr-N` branch: the CI clone lacks a remote-tracking ref for
   it, so `--force-with-lease` rejects with "stale info" (run 29656689445 —
