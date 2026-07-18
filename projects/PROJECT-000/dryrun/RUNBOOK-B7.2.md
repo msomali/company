@@ -47,6 +47,14 @@ Joint execution (BA-6 row B7.2); evidence target: episode package(s) under
   required checks, reverting after B7.3. Alternative: red-check + owner
   refuses merge (policy block, not mechanical). Owner's call; evidence notes
   which form ran.
+  - **DECIDED 2026-07-18 (owner):** `evals` is temporarily added to
+    required checks **for the check-14 window only**, bracketed with
+    before/after branch-protection read-backs, and reverted immediately
+    after — same discipline as the freeze drill (2026-07-17). Evidence in
+    the episode: both read-backs + the red→green eval CI runs.
+    **Evals-required is a dry-run-window state, not the steady config**;
+    steady-state evals-required is decided at the post-bootstrap
+    branch-protection review.
 
 ## Fixtures (this PR)
 
