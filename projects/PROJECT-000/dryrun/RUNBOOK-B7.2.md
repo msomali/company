@@ -4,7 +4,7 @@ title: B7.2 dry-run runbook — §88 checks 1–5, 7, 10–14 (joint)
 type: runbook
 project: PROJECT-000
 owner: bootstrap agent (agenticfoundrybot)
-version: "1.5"
+version: "1.6"
 status: READY_FOR_REVIEW
 sensitivity: internal
 created: "2026-07-17"
@@ -146,6 +146,17 @@ superseded by PR-body claim + workflow_dispatch replay → `GATE-SAT-PR53`.
   to overwrite an existing committed report unless explicitly forced, and
   the force path must be loud (explicit flag + printed warning naming the
   file being replaced).
+- (check 12, 2026-07-18) **The §82.3 breaker did not exist.** All parts
+  were present (caps, action logging, loop detection, block-with-ESC) but
+  nothing counted tool actions against `tool_call_limit` — the check's
+  central mechanism was never built. Fixed: `Dispatcher.record_action()`
+  (breach action logged as evidence, then BLOCKED + ESC; BLOCKED tasks
+  refuse actions and dispatch — no retry loop possible).
+- (check 12, 2026-07-18) `effective_caps` ignored tighter envelope budgets
+  for T1/T2: the fixture's `tool_call_limit: 1` on a T2 task silently
+  became the tier's 100 — budget enforcement fiction. Fixed: tier caps are
+  ceilings, a tighter envelope budget always wins; looser never raises the
+  ceiling.
 - (check 7 replay, 2026-07-18) gate-writer's replay cannot overwrite an
   existing `gate/pr-N` branch: the CI clone lacks a remote-tracking ref for
   it, so `--force-with-lease` rejects with "stale info" (run 29656689445 —
