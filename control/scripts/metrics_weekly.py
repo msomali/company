@@ -133,16 +133,62 @@ def _load_prices(root: Path) -> dict:
     return doc.get("models") or {}
 
 
+def _episode_dirs(root: Path):
+    """Yield TASK-### dirs from every episodes/ tree: the legacy root
+    location and the real per-project layout projects/<P>/episodes/
+    (§88.11 fix 2026-07-18 — the module previously scanned only
+    <root>/episodes/, which no project uses)."""
+    roots = [root / "episodes"]
+    projects = root / "projects"
+    if projects.is_dir():
+        roots += sorted(p / "episodes" for p in projects.iterdir() if p.is_dir())
+    for episodes in roots:
+        if not episodes.is_dir():
+            continue
+        for task_dir in sorted(episodes.iterdir()):
+            if task_dir.is_dir() and task_dir.name.startswith("TASK-"):
+                yield task_dir
+
+
+def _usage_totals(usage: dict, prices: dict) -> tuple[int, int, float]:
+    """(tokens_in, tokens_out, cost) from a usage.yaml document.
+
+    Two formats exist (§88.11 finding 2026-07-18):
+      * metering.py's real format: total_* fields + calls as an int counter;
+        cost was priced via prices.yaml at record time — use the totals.
+      * the earlier per-call list form (calls: [{model, input_tokens,
+        output_tokens}]) — price here from prices.yaml.
+    """
+    calls = usage.get("calls")
+    if isinstance(calls, list):
+        t_in = t_out = 0
+        cost = 0.0
+        for call in calls:
+            model = prices.get(str(call.get("model", "")), {})
+            ci = int(call.get("input_tokens", 0))
+            co = int(call.get("output_tokens", 0))
+            t_in += ci
+            t_out += co
+            cost += ci / 1e6 * float(model.get("input_per_mtok", 0.0))
+            cost += co / 1e6 * float(model.get("output_per_mtok", 0.0))
+        return t_in, t_out, cost
+    return (
+        int(usage.get("total_input_tokens", 0)),
+        int(usage.get("total_output_tokens", 0)),
+        float(usage.get("total_estimated_cost_usd", 0.0)),
+    )
+
+
 def collect_tasks(root: Path, since, until) -> dict:
-    episodes = root / "episodes"
-    if not episodes.is_dir():
+    task_dirs = list(_episode_dirs(root))
+    if not task_dirs:
         return {"packages": 0, "note": "no episode packages (idle-by-design during bootstrap)"}
     prices = _load_prices(root)
     done = blocked = in_flight = 0
     latencies: list[float] = []
     cost = 0.0
     tokens_in = tokens_out = 0
-    for task_dir in sorted(p for p in episodes.iterdir() if p.is_dir() and p.name.startswith("TASK-")):
+    for task_dir in task_dirs:
         state_path = task_dir / "state.yaml"
         if not state_path.is_file():
             continue
@@ -170,14 +216,10 @@ def collect_tasks(root: Path, since, until) -> dict:
         usage_path = task_dir / "usage.yaml"
         if usage_path.is_file():
             usage = yaml.safe_load(usage_path.read_text(encoding="utf-8")) or {}
-            for call in usage.get("calls") or []:
-                model = prices.get(str(call.get("model", "")), {})
-                t_in = int(call.get("input_tokens", 0))
-                t_out = int(call.get("output_tokens", 0))
-                tokens_in += t_in
-                tokens_out += t_out
-                cost += t_in / 1e6 * float(model.get("input_per_mtok", 0.0))
-                cost += t_out / 1e6 * float(model.get("output_per_mtok", 0.0))
+            t_in, t_out, t_cost = _usage_totals(usage, prices)
+            tokens_in += t_in
+            tokens_out += t_out
+            cost += t_cost
     closed = done + blocked
     return {
         "packages": done + blocked + in_flight,
