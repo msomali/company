@@ -117,6 +117,16 @@ Paste the three legs' outputs below; then amend hardening-evidence row 9 to
 `[x]` with this SOP + date as the evidence cell (owner-voice document; owner
 edits it).
 
+## C7 lever — collaborator removal (optional drill, owner discretion)
+
+For suspected PAT exposure the pause path prints OWNER step 4b: remove
+`agenticfoundrybot` as collaborator (instant, token-state-independent — the
+only owner-side sever; PAT revocation needs the bot's own session). Full
+cycle if drilled: DELETE → read-back 404 → re-invite (PUT, permission=push)
+→ bot accepts invitation → read-back 204. Cost: one invitation round-trip;
+while removed, ADR-B005 co-ownership reviews cannot be satisfied. Row 9 is
+closed and stays closed — this drill is additive, not a reopening.
+
 ## Evidence — kill-switch drill (owner paste + date)
 
 Full drill 2026-07-17: executed — five defects found and fixed forward

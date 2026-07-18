@@ -122,6 +122,34 @@ def test_resume_prints_unfreeze_readback():
     assert ".lock_branch.enabled" in out and "expect: false" in out
 
 
+# --- C7 lever (owner backlog note 2026-07-17, post-#43) ---
+
+
+def test_c7_lever_printed_in_pause():
+    out = run("pause", "--dry-run").stdout
+    assert "OWNER  4b." in out
+    assert "-X DELETE repos/msomali/company/collaborators/agenticfoundrybot" in out
+    assert "expect: 404" in out                      # read-back into evidence
+    assert "agenticfoundrybot session" in out        # revocation authority stated
+
+
+def test_c7_lever_orders_between_key_revoke_and_freeze():
+    out = run("pause", "--dry-run").stdout
+    assert out.find("OWNER  4.") < out.find("OWNER  4b.") < out.find("OWNER  5.")
+
+
+def test_resume_prints_reinvite_cycle():
+    out = run("resume", "--dry-run").stdout
+    assert "-X PUT" in out and "collaborators/agenticfoundrybot" in out
+    assert "repository_invitations" in out           # bot-side acceptance path
+    assert "expect: 204" in out
+
+
+def test_c7_lever_names_codeowners_side_effect():
+    out = run("pause", "--dry-run").stdout
+    assert "ADR-B005" in out
+
+
 def test_deploy_key_revocation_matches_manifest_row():
     """Kill switch severs the DISPATCHER_DEPLOY_KEY exactly as the
     SECRETS-MANIFEST row promises (revocation = delete key on repo)."""
