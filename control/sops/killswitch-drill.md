@@ -9,7 +9,17 @@ executes on the host and pastes evidence below (BA-5.4).
 ## Preconditions
 
 - Dispatcher installed and active (B4.3 — PR #20 evidence).
-- Repo at current `main` on the host checkout (`/srv/company/repo`).
+- Host checkout at current `main` — run it, don't assume it:
+
+  ```bash
+  sudo -u dispatcher git -C /srv/company/repo pull --ff-only
+  ```
+
+  **Stale-checkout warning:** a stale checkout drills yesterday's script.
+  The 2026-07-17 drill surfaced defects against live state (key title/path
+  drift, user-context gateway) for exactly this class of reason — verify
+  `git -C /srv/company/repo log --oneline -1` matches origin/main before
+  starting.
 - `gh` on the host authenticated as the **owner (admin)** — deploy-key
   revocation and branch freeze are admin API calls. The bot PAT is not admin
   and must never be used here.
@@ -33,6 +43,12 @@ bash control/scripts/kill_switch.sh pause --dry-run
 # 2. PAUSE for real
 bash control/scripts/kill_switch.sh pause
 ```
+
+Pause executes steps 1–3 and 6–7 itself. Steps 4 (deploy-key revoke) and 5
+(freeze) are **printed OWNER commands** — root's `gh` is unauthenticated by
+design (drill defect 4) — run them in your own window as printed. **Evidence
+requirement:** the `lock_branch.enabled → true` read-back must be captured
+immediately after the freeze PUT, at freeze time, not later.
 
 ### 3. Verify the severed state (paste outputs)
 
@@ -80,10 +96,35 @@ Paste evidence below with date, then amend
 `control/sops/hardening-evidence.md` row 9: evidence cell → drill reference +
 date, Done → `[x]` (owner-voice document; owner edits it).
 
+## Targeted re-drill — row 9 closure (after PR: drill-defect fixes)
+
+The 2026-07-17 full drill validated containment structure but three legs
+were never demonstrated (defects 1–5, fixed in the follow-up PR). Row 9
+closes on evidence of exactly these:
+
+1. **Gateway sever + restore (user context):**
+   `bash control/scripts/kill_switch.sh pause` step 3 shows DONE; verify
+   `sudo -u mr-robot -i openclaw gateway status` → stopped; then resume
+   step 1 DONE and status → running.
+2. **Freeze/unfreeze cycle with read-backs:** freeze PUT →
+   `.lock_branch.enabled` → `true` (captured at freeze time) → unfreeze PUT
+   with protection-normal.json → read-back `false`.
+3. **Scripted resume end-to-end:** `kill_switch.sh resume` with both service
+   legs DONE and `kill-switch.log` present in the (pre-existing or created)
+   evidence dir; dispatcher heartbeat `cap=3` after.
+
+Paste the three legs' outputs below; then amend hardening-evidence row 9 to
+`[x]` with this SOP + date as the evidence cell (owner-voice document; owner
+edits it).
+
 ## Evidence — kill-switch drill (owner paste + date)
 
+Full drill 2026-07-17: executed — five defects found and fixed forward
+(see PR); containment verified except gateway sever + freeze, hence row 9
+remains open pending the targeted re-drill above.
+
 ```
-REQUIRED-INPUT (owner): paste the severed-state and restored-state outputs here
+REQUIRED-INPUT (owner): paste the targeted re-drill outputs here
 ```
 
 Attested by: REQUIRED-INPUT (owner)

@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import datetime
+import os
 import subprocess
 import sys
 from pathlib import Path
@@ -40,28 +41,35 @@ body
 """
 
 
+# Commit timestamps are PINNED (env below): tests once created commits at
+# wall-clock "now" against a fixed window and broke the moment UTC rolled
+# past midnight (found 2026-07-17 late PDT). Determinism or it didn't happen.
+GIT_DATE_ENV = {
+    "GIT_AUTHOR_DATE": "2026-07-16T12:00:00 +0000",
+    "GIT_COMMITTER_DATE": "2026-07-16T12:00:00 +0000",
+}
+
+
+def commit(root: Path, message: str, *extra: str) -> None:
+    subprocess.run(
+        ["git", "-C", str(root), "-c", "user.name=t", "-c", "user.email=t@t",
+         "commit", "-q", *extra, "-m", message],
+        check=True,
+        env={**os.environ, **GIT_DATE_ENV},
+    )
+
+
 def repo(tmp_path: Path) -> Path:
     subprocess.run(["git", "init", "-q", str(tmp_path)], check=True)
     (tmp_path / "f.txt").write_text("x")
     subprocess.run(["git", "-C", str(tmp_path), "add", "f.txt"], check=True)
-    subprocess.run(
-        [
-            "git", "-C", str(tmp_path),
-            "-c", "user.name=t", "-c", "user.email=t@t",
-            "commit", "-q", "-m", "Merge pull request #40 from x/y",
-        ],
-        check=True,
-    )
+    commit(tmp_path, "Merge pull request #40 from x/y")
     return tmp_path
 
 
 def test_git_merge_and_revert_counting(tmp_path):
     root = repo(tmp_path)
-    subprocess.run(
-        ["git", "-C", str(root), "-c", "user.name=t", "-c", "user.email=t@t",
-         "commit", "-q", "--allow-empty", "-m", 'Revert "bad change"'],
-        check=True,
-    )
+    commit(root, 'Revert "bad change"', "--allow-empty")
     g = mw.collect_git(root, UNTIL - datetime.timedelta(days=6), UNTIL)
     assert g["merge_count"] == 1 and g["merged_prs"] == [40]
     assert g["revert_count"] == 1
