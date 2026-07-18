@@ -8,6 +8,7 @@ version: "1.0"
 status: READY_FOR_REVIEW
 sensitivity: internal
 created: "2026-07-18"
+updated: "2026-07-18"
 ---
 
 # TASK-001 — slugify(title) implementation note
