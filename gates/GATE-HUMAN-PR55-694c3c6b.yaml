@@ -1,0 +1,17 @@
+# Gate Decision Record (v2 §8) — emitted by gate-writer (B5.2)
+gate_id: GATE-HUMAN-PR55-694c3c6b
+artifact_or_release: 'PR #55: C6 claim channel: doctrine + enforcement (check-7 hold,
+  MEM-ORG-0004)'
+gate_owner: HUMAN
+decision: APPROVED
+criteria_version: v2§8/v1§15 handoff rev 1
+evidence:
+- https://github.com/msomali/company/pull/55
+- https://github.com/msomali/company/pull/55#pullrequestreview-4729145063
+- merge:694c3c6b52cdf9ec29712e50a3ab19221635fed3
+findings: []
+conditions: []
+expires: null
+next_owner: Human owner (review/merge; then verify replayed gate record).
+decided_at: '2026-07-18T19:16:47Z'
+approval_message_ref: https://github.com/msomali/company/pull/55#pullrequestreview-4729145063

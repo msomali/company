@@ -53,3 +53,49 @@ def test_wrong_title_reported():
 def test_empty_body_fails():
     problems = hc.check("")
     assert len(problems) == len(hc.SECTIONS)
+
+
+# ---------------------- §86-C6 claim-channel rule (MEM-ORG-0004, 2026-07-18)
+
+def test_role_branch_without_claim_fails():
+    problems = hc.role_claim_problems("sde/TASK-002-widget", filled_template())
+    assert len(problems) == 1
+    assert "no machine-readable gate-role claim" in problems[0]
+
+
+def test_role_branch_with_claim_passes():
+    body = filled_template() + "\nrole: SAT\n"
+    assert hc.role_claim_problems("sde/TASK-002-widget", body) == []
+
+
+def test_claim_is_case_insensitive_and_mid_body():
+    body = "## intro\nrole: pjm\nmore text"
+    assert hc.role_claim_problems("pjm/plan-tweak", body) == []
+
+
+def test_explicit_human_claim_accepted():
+    body = filled_template() + "\nrole: HUMAN\n"
+    assert hc.role_claim_problems("sat/review-notes", body) == []
+
+
+def test_non_gate_role_word_is_not_a_claim():
+    # SDE is not a claimable gate owner; a stray 'role: SDE' must not satisfy
+    body = filled_template() + "\nrole: SDE\n"
+    assert len(hc.role_claim_problems("sde/TASK-002-widget", body)) == 1
+
+
+def test_claim_inside_html_comment_does_not_count():
+    body = filled_template() + "\n<!--\nrole: SAT\n-->\n"
+    assert len(hc.role_claim_problems("sde/TASK-002-widget", body)) == 1
+
+
+def test_non_role_branches_unaffected():
+    for ref in ("bootstrap/c6-claim-channel", "dispatch/TASK-001",
+                "gate/pr-53", "owner/b7.1-sign-charter", "main", ""):
+        assert hc.role_claim_problems(ref, "") == []
+
+
+def test_all_role_prefixes_covered():
+    assert len(hc.ROLE_BRANCH_PREFIXES) == 13  # ADR-B001 short codes
+    for prefix in hc.ROLE_BRANCH_PREFIXES:
+        assert hc.role_claim_problems(f"{prefix}/x", "") != []
