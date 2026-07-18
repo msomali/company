@@ -1,5 +1,5 @@
 task_id: TASK-001
-state: DESIGN
+state: DELIVERY_PLAN
 run_id: null
 iteration_count: 0
 rejection_cycles: 0
@@ -23,3 +23,8 @@ history:
   to: DESIGN
   evidence: 'design recorded: notes/slugify-implementation.md ''Approach'' (NFKD fold
     + ascii round-trip + single-regex collapse), merged via PR #53'
+- at: '2026-07-18T21:16:01Z'
+  from: DESIGN
+  to: DELIVERY_PLAN
+  evidence: 'delivery plan = PR #53 handoff package sections 1-4 (branch sde/TASK-001-slugify,
+    opened 2026-07-18)'
