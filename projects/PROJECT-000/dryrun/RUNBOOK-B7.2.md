@@ -4,11 +4,11 @@ title: B7.2 dry-run runbook — §88 checks 1–5, 7, 10–14 (joint)
 type: runbook
 project: PROJECT-000
 owner: bootstrap agent (agenticfoundrybot)
-version: "1.0"
+version: "1.1"
 status: READY_FOR_REVIEW
 sensitivity: internal
 created: "2026-07-17"
-updated: "2026-07-17"
+updated: "2026-07-18"
 ---
 
 # B7.2 Dry-Run Runbook — §88 checks 1–5, 7, 10–14
@@ -18,9 +18,10 @@ Joint execution (BA-6 row B7.2); evidence target: episode package(s) under
 
 ## Gate 0 — preconditions (BLOCKING, owner)
 
-- **P1. Charter signature (B7.1).** `projects/PROJECT-000/charter.md` on
-  main still reads `status: READY_FOR_REVIEW`, `approval: REQUIRED-INPUT`.
-  §88 requires an approved charter; no envelope is issued before this.
+- **P1. Charter signature (B7.1).** **RESOLVED 2026-07-18** — charter
+  signed and merged (PR #49): `status: APPROVED`, both approval fields
+  `msomali 2026-07-18`, budget ceiling finalized at USD 50 (anomaly
+  breaker).
 - **P2. Check-3 backend decision.** The dispatcher refuses dispatch unless
   the role manifest is `active` (activation = human act, BA-2.4) and needs a
   session backend (`sessions_spawn` wiring is deliberately absent during
@@ -36,6 +37,10 @@ Joint execution (BA-6 row B7.2); evidence target: episode package(s) under
   - Recommendation: **(b)** for B7.2, recording the delta as B7.4 friction
     ("real spawn wiring") — §87 completion judges mechanisms + prompt
     contract, and (b) proves both without an activation act mid-dry-run.
+  - **DECIDED 2026-07-18 (owner):** option **(b)** — recorded-prompt
+    backend. No manifest is pilot-activated during the dry run; activation
+    stays a post-§88 human act per BA-2.4. The `sessions_spawn` wiring
+    delta is logged as B7.4 friction (entry below).
 - **P3. Evals-required toggle (checks 4/14).** `evals` is not a required
   status (path-filter hazard, PR #22 §5). For the dry-run window, §88.14's
   "blocked by eval CI" is cleanest if the owner temporarily adds `evals` to
@@ -78,4 +83,7 @@ Joint execution (BA-6 row B7.2); evidence target: episode package(s) under
 
 ## B7.4 friction list (live, appended during run)
 
-- (pre-seeded) Real `sessions_spawn` wiring absent by design — P2 delta.
+- (pre-seeded; confirmed by owner P2 decision 2026-07-18) Real
+  `sessions_spawn` wiring absent by design — check 3 ran on the
+  recorded-prompt backend (P2 option b). Real spawn wiring is a post-§88
+  activation-era work item.
