@@ -1,5 +1,5 @@
 task_id: TASK-001
-state: QUALITY_REVIEW
+state: SECURITY_REVIEW
 run_id: null
 iteration_count: 0
 rejection_cycles: 0
@@ -38,3 +38,7 @@ history:
   to: QUALITY_REVIEW
   evidence: '521/521 tests green at a31c274d; SAT review opened: cycle-1 record PR
     #53 comment 5012331464 (evidence/check5-sat-two-cycle.md)'
+- at: '2026-07-18T21:45:17Z'
+  from: QUALITY_REVIEW
+  to: SECURITY_REVIEW
+  evidence: 'SAT gate APPROVED by @msomali: https://github.com/msomali/company/pull/58#pullrequestreview-4729329698'
