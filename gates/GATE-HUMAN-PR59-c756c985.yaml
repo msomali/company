@@ -1,0 +1,17 @@
+# Gate Decision Record (v2 §8) — emitted by gate-writer (B5.2)
+gate_id: GATE-HUMAN-PR59-c756c985
+artifact_or_release: 'PR #59: B7.3 runbook: mechanism-derived procedures for §88 checks
+  6/8/9'
+gate_owner: HUMAN
+decision: APPROVED
+criteria_version: v2§8/v1§15 handoff rev 1
+evidence:
+- https://github.com/msomali/company/pull/59
+- https://github.com/msomali/company/pull/59#pullrequestreview-4729309414
+- merge:c756c98524b08b5de87f805030245c1387cbe470
+findings: []
+conditions: []
+expires: null
+next_owner: Human owner (review/merge, then the [H] steps of checks 8–9).
+decided_at: '2026-07-18T21:14:12Z'
+approval_message_ref: https://github.com/msomali/company/pull/59#pullrequestreview-4729309414

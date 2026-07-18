@@ -4,7 +4,7 @@ title: B7.2 dry-run runbook — §88 checks 1–5, 7, 10–14 (joint)
 type: runbook
 project: PROJECT-000
 owner: bootstrap agent (agenticfoundrybot)
-version: "1.1"
+version: "1.3"
 status: READY_FOR_REVIEW
 sensitivity: internal
 created: "2026-07-17"
@@ -73,6 +73,20 @@ Joint execution (BA-6 row B7.2); evidence target: episode package(s) under
 | 13 | Kill switch pause/resume mid-task | J | pause during an in-flight task (owner window per drilled SOP); resume → dispatcher re-dispatches from state.yaml and the task completes. Sever/freeze legs already evidenced 2026-07-17 (row 9); this adds the re-dispatch leg |
 | 14 | Failing golden task blocks prompt-bundle PR; fixed → merge + release tag | J | PR touching `control/evals/**` with a failing case → eval CI red (per P3 form); fix; merge; owner tags release |
 
+## §86-C6 claim channel (added 2026-07-18, check-7 hold; MEM-ORG-0004)
+
+Bot-role PRs **MUST** carry the machine-readable gate-role claim — a
+line-start `role: <ROLE>` — in the PR body (handoff template). Mandatory,
+not optional: under ADR-B000 the author-bot cannot review its own PR, so
+the approving-review-body claim channel is **structurally dead for all
+bot-role gates**; the PR body is the only live channel gate-writer parses
+when emitting the gate record on merge. Check-5-style gate-record comments
+are review *evidence*, not a claim channel — the emitter never reads
+comments. Enforced by handoff-check (fails role-prefixed branches without
+the claim); the owner verifies claimed attribution at merge (C6 backstop).
+Check 7's first run demonstrated the failure: emitted `GATE-HUMAN-PR53`
+superseded by PR-body claim + workflow_dispatch replay → `GATE-SAT-PR53`.
+
 ## Rules in force during the run
 
 - Every check's raw output lands in the episode package, not chat.
@@ -87,3 +101,27 @@ Joint execution (BA-6 row B7.2); evidence target: episode package(s) under
   `sessions_spawn` wiring absent by design — check 3 ran on the
   recorded-prompt backend (P2 option b). Real spawn wiring is a post-§88
   activation-era work item.
+- (check 7, 2026-07-18) Under ADR-B000 the approving-review-body claim
+  channel is dead for every bot-role PR — the author-bot cannot review its
+  own PR, so §86-C6 claims can only travel in the PR body. First check-7
+  run emitted `GATE-HUMAN-PR53` for a SAT-gated PR. Permanent constraint:
+  MEM-ORG-0004; enforcement added to handoff-check.
+- (check 7, 2026-07-18) Check-5 evidence format (gate-record comments) and
+  the check-7 emitter (review-body/PR-body parser) do not compose —
+  comments are invisible to `claimed_role()`. Deferred activation-era
+  hardening candidate: extend `claimed_role()` to scan issue comments so
+  the two mechanisms compose mechanically.
+- (check 8/9 setup, 2026-07-18) Plan row B7.3 (checks 6/8/9, owner-solo)
+  existed with **no authored procedure anywhere in the repo** — same
+  failure class as ticks-without-artifacts (L-001/MEM-ORG-0001): a plan
+  row with no executable procedure. Caught by the owner when preparing
+  checks 8/9 (after check 6's numbering jump). Remedied: RUNBOOK-B7.3.md
+  authored from the implemented mechanisms (approvals.py, §51 register
+  interim channel, state-machine prerequisites, release-branch setup).
+- (check 7 replay, 2026-07-18) gate-writer's replay cannot overwrite an
+  existing `gate/pr-N` branch: the CI clone lacks a remote-tracking ref for
+  it, so `--force-with-lease` rejects with "stale info" (run 29656689445 —
+  record built correctly, publish failed). Workaround: operator deletes the
+  stale branch (closing its gate PR unmerged) and re-dispatches; the fresh
+  create then succeeds. Fix candidate (deferred): fetch the gate branch ref
+  before pushing, or drop the lease on the replay path.
