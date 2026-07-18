@@ -1,0 +1,16 @@
+# Gate Decision Record (v2 §8) — emitted by gate-writer (B5.2)
+gate_id: GATE-HUMAN-PR53-e90c735e
+artifact_or_release: 'PR #53: TASK-001 (SDE): slugify + tests — check-4/5 vehicle'
+gate_owner: HUMAN
+decision: APPROVED
+criteria_version: v2§8/v1§15 handoff rev 1
+evidence:
+- https://github.com/msomali/company/pull/53
+- https://github.com/msomali/company/pull/53#pullrequestreview-4729065353
+- merge:e90c735e31303b2193e35a7081ea67d2873e947a
+findings: []
+conditions: []
+expires: null
+next_owner: SAT (review, check 5), then human owner (required review + merge).
+decided_at: '2026-07-18T18:34:59Z'
+approval_message_ref: https://github.com/msomali/company/pull/53#pullrequestreview-4729065353
