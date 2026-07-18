@@ -45,7 +45,7 @@ custody and rotation procedures per row in
 
 | Credential | Rotation |
 |---|---|
-| Bot PAT (GH_TOKEN_AGENTICFOUNDRYBOT) | Revoke on github.com; mint replacement; update Actions secret + workspace file (600) |
+| Bot PAT (GH_TOKEN_AGENTICFOUNDRYBOT) | **FAST, owner-side (C7):** remove the bot as collaborator — `gh api -X DELETE repos/msomali/company/collaborators/agenticfoundrybot` — severs repo access instantly regardless of token state (an exfiltrated token works off-host; host containment does not touch it). Revocation itself is **not owner-executable**: a PAT belongs to its account and is revoked only from the `agenticfoundrybot` session. Then: revoke + mint replacement from the bot session; update Actions secret + workspace file (600); owner re-invites (`-X PUT …/collaborators/agenticfoundrybot -f permission=push`), bot accepts, verify 204. While removed, ADR-B005 dual-control CODEOWNERS cannot be satisfied — expected under freeze. |
 | Gateway token | Regenerate file (`openssl rand -hex 32`) + `openclaw gateway restart` |
 | Dispatcher deploy key | Delete key on repo (kill-switch step 4 does this); new keygen + re-register per dispatcher-install §3b |
 | Provider auth (Mode S) | Re-mint setup-token / re-run OAuth sign-in per agent auth store |

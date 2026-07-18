@@ -78,6 +78,15 @@ pause() {
   echo "OWNER  4. revoke dispatcher deploy key — run with YOUR authenticated gh:"
   echo "       gh repo deploy-key list --repo $GH_REPO"
   echo "       gh repo deploy-key delete <id of '$KEY_TITLE'> --repo $GH_REPO"
+  echo "OWNER  4b. C7 lever — if PAT exposure is suspected: an exfiltrated token"
+  echo "       works OFF-HOST; stopping containers/gateway does not touch it, and"
+  echo "       PAT revocation itself requires the agenticfoundrybot session (a"
+  echo "       token belongs to its account — not owner-executable). The instant"
+  echo "       owner-side sever is collaborator removal, token-state-independent:"
+  echo "       gh api -X DELETE repos/$GH_REPO/collaborators/agenticfoundrybot"
+  echo "       gh api repos/$GH_REPO/collaborators/agenticfoundrybot   # expect: 404 — paste into evidence"
+  echo "       (side effect while removed: ADR-B005 dual-control CODEOWNERS cannot"
+  echo "       be satisfied — expected during an incident freeze)"
   echo "OWNER  5. freeze protected branch main — run, then capture the read-back"
   echo "       AT FREEZE TIME (evidence requirement):"
   echo "       gh api -X PUT repos/$GH_REPO/branches/main/protection --input $REPO_DIR/control/sops/protection-frozen.json"
@@ -121,6 +130,10 @@ resume() {
   echo "      gh api -X PUT repos/$GH_REPO/branches/main/protection --input control/sops/protection-normal.json"
   echo "      gh api repos/$GH_REPO/branches/main/protection --jq .lock_branch.enabled   # expect: false — paste into evidence"
   echo "      gh repo deploy-key add ${KEY_PATH}.pub --repo $GH_REPO --title \"$KEY_TITLE\" --allow-write"
+  echo "      if the C7 lever (collaborator removal) was pulled — re-invite, bot accepts, verify:"
+  echo "      gh api -X PUT repos/$GH_REPO/collaborators/agenticfoundrybot -f permission=push"
+  echo "      (bot side accepts with its rotated PAT: GET /user/repository_invitations + PATCH <id>)"
+  echo "      gh api repos/$GH_REPO/collaborators/agenticfoundrybot -i | head -1   # expect: 204 — paste into evidence"
   run "1. start OpenClaw gateway" \
       sudo -u "$GATEWAY_USER" -i openclaw gateway start
   run "2. start dispatcher service (re-dispatches from state.yaml)" \
