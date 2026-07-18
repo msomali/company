@@ -1,5 +1,5 @@
 task_id: TASK-001
-state: INTAKE
+state: DISCOVERY
 run_id: null
 iteration_count: 0
 rejection_cycles: 0
@@ -8,3 +8,8 @@ history:
   from: NONE
   to: INTAKE
   evidence: task-create from envelope-check1-valid-t2.yaml
+- at: '2026-07-18T21:16:01Z'
+  from: INTAKE
+  to: DISCOVERY
+  evidence: 'dispatch executed check 3: recorded-run-001, prompt capture evidence/check3-dispatch-prompt.txt
+    (digest+envelope+links verified)'
