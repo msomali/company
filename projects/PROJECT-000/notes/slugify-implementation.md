@@ -4,7 +4,7 @@ title: TASK-001 slugify implementation note
 type: note
 project: PROJECT-000
 owner: SDE (via bootstrap session, §86-C6 attribution)
-version: "1.0"
+version: "1.1"
 status: READY_FOR_REVIEW
 sensitivity: internal
 created: "2026-07-18"
@@ -31,11 +31,15 @@ and Gate 0 P2 decision (recorded-prompt backend).
 ## Tests (projects/PROJECT-000/tests/test_slugify.py)
 
 - 6 unicode-folding cases, 6 separator cases, empty/symbol-only, TypeError.
+- 5 non-decomposable-script pinning cases (SAT-53-F1): Cyrillic/CJK drop
+  to empty; mixed-script keeps the Latin/digit runs.
 - Property tests on a fixed-seed (seed=88) 500-string corpus: output shape
-  `^$|^[a-z0-9]+(-[a-z0-9]+)*$`, idempotence, determinism — 516 passing.
+  `^$|^[a-z0-9]+(-[a-z0-9]+)*$`, idempotence, determinism — 521 passing.
 
 ## Known limits
 
 Non-Latin scripts without NFKD ascii decompositions (e.g. CJK, Cyrillic)
-fold to empty runs and drop out of the slug; acceptable for charter scope
-(synthetic dry run), flagged for any real adoption.
+fold to empty runs and drop out of the slug — now pinned by tests per
+SAT-53-F1, so any change to this contract must consciously rewrite both
+the tests and this note. Acceptable for charter scope (synthetic dry run),
+flagged for any real adoption.
