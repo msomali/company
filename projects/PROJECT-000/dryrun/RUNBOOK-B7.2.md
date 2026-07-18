@@ -4,7 +4,7 @@ title: B7.2 dry-run runbook — §88 checks 1–5, 7, 10–14 (joint)
 type: runbook
 project: PROJECT-000
 owner: bootstrap agent (agenticfoundrybot)
-version: "1.4"
+version: "1.5"
 status: READY_FOR_REVIEW
 sensitivity: internal
 created: "2026-07-17"
@@ -138,6 +138,14 @@ superseded by PR-body claim + workflow_dispatch replay → `GATE-SAT-PR53`.
   "per-agent usage" is satisfied only by documented call order under
   P2(b). Activation-era fix candidate: `agent` param on `record_usage` +
   log event + usage.yaml per-agent rollup.
+- (check 11, 2026-07-18; **owner-approved B7.4 work item 15:39 PDT**)
+  Weekly-metrics regeneration silently clobbers a committed report — same
+  ISO week ⇒ same filename; B6.3's first W29 report was worktree-clobbered
+  during check 11 (restored from git). Data-loss-by-design. Required fix
+  (its own change, may land post-dry-run): `metrics_weekly.py` must REFUSE
+  to overwrite an existing committed report unless explicitly forced, and
+  the force path must be loud (explicit flag + printed warning naming the
+  file being replaced).
 - (check 7 replay, 2026-07-18) gate-writer's replay cannot overwrite an
   existing `gate/pr-N` branch: the CI clone lacks a remote-tracking ref for
   it, so `--force-with-lease` rejects with "stale info" (run 29656689445 —
