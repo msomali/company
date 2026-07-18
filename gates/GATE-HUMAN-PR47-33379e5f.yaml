@@ -1,0 +1,17 @@
+# Gate Decision Record (v2 §8) — emitted by gate-writer (B5.2)
+gate_id: GATE-HUMAN-PR47-33379e5f
+artifact_or_release: 'PR #47: B7.2: dry-run runbook + validated fixtures (Gate 0 blocking:
+  charter signature + 2 decisions)'
+gate_owner: HUMAN
+decision: APPROVED
+criteria_version: v2§8/v1§15 handoff rev 1
+evidence:
+- https://github.com/msomali/company/pull/47
+- https://github.com/msomali/company/pull/47#pullrequestreview-4728682552
+- merge:33379e5f8eb13b5076f00247d5dc92a5716efb56
+findings: []
+conditions: []
+expires: null
+next_owner: 'Human owner (Gate 0: signature + two decisions; then joint execution).'
+decided_at: '2026-07-18T14:44:03Z'
+approval_message_ref: https://github.com/msomali/company/pull/47#pullrequestreview-4728682552
