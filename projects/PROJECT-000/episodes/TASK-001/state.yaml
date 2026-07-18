@@ -1,5 +1,5 @@
 task_id: TASK-001
-state: PRODUCT_ACCEPTANCE
+state: HUMAN_RELEASE_AUTHORIZATION
 run_id: null
 iteration_count: 0
 rejection_cycles: 0
@@ -54,3 +54,7 @@ history:
   from: PRODUCTION_READINESS
   to: PRODUCT_ACCEPTANCE
   evidence: 'DCE gate APPROVED by @msomali: https://github.com/msomali/company/pull/58#pullrequestreview-4729371783'
+- at: '2026-07-18T22:08:12Z'
+  from: PRODUCT_ACCEPTANCE
+  to: HUMAN_RELEASE_AUTHORIZATION
+  evidence: 'PJM gate APPROVED by @msomali: https://github.com/msomali/company/pull/58#pullrequestreview-4729376823'
