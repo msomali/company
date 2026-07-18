@@ -1,0 +1,16 @@
+# Gate Decision Record (v2 §8) — emitted by gate-writer (B5.2)
+gate_id: GATE-HUMAN-PR40-33f153b3
+artifact_or_release: 'PR #40: row 9: clear stale markers in hardening evidence'
+gate_owner: HUMAN
+decision: APPROVED
+criteria_version: v2§8/v1§15 handoff rev 1
+evidence:
+- https://github.com/msomali/company/pull/40
+- https://github.com/msomali/company/pull/40#pullrequestreview-4727588874
+- merge:33f153b36f23782f1faca8e38b1e386109dd1952
+findings: []
+conditions: []
+expires: null
+next_owner: Bootstrap agent (review), then owner (merge).
+decided_at: '2026-07-18T03:56:04Z'
+approval_message_ref: https://github.com/msomali/company/pull/40#pullrequestreview-4727588874
