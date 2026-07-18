@@ -1,0 +1,52 @@
+task_id: TASK-001
+collected_at: '2026-07-18T22:22:11Z'
+final_state: DEPLOYMENT
+rejection_cycles: 0
+iteration_count: 0
+files:
+  evidence/check1-task-create.md: 7ddb79a0e38684aa890cd9f48e22844121ca6e2056e1a23430fbbe0e79adc1b1
+  evidence/check10-episode-completeness.md: 3025c4ac6f76b03d4fbc63fecc614114b28d08c15c44c21713ddb408b22a26d0
+  evidence/check2-rejection.md: 80bc649063ec45cb703086a6d4bf672945d3bbb05b32da542c54f3dfdff0fe11
+  evidence/check3-dispatch-prompt-contract.md: 2e23c86d24316379699a224263f76b8df50022fa9c9a4ba8cda6226175f99439
+  evidence/check3-dispatch-prompt-inputs-variant.txt: 71c81e6e820ee1ec89b12c346dc95412564dec816e198beb6daa6c1774ba20d8
+  evidence/check3-dispatch-prompt.txt: 6e9209f9b46e145af3543e47f10e05b362c9475437047a665f381457f8be8cc1
+  evidence/check3-results.txt: cff023f541a036bbc354854c89ac1f37b214e738204d9947017f89d2355dfe4d
+  evidence/check3_driver.py: 42d58118459f54dd0ccf42eec5dcb4f64d9f8efed5f1191c8d7dd1b050a446de
+  evidence/check4-handoff-ci.md: 6f732b38018f62acb4b80d127431e006708420bbfb0c3a2c708ee856aa16e8e0
+  evidence/check5-sat-two-cycle.md: 94a16f20596c92f0b527562c6a06e67fec822e753cd076438fad9a39510302e8
+  evidence/check6-separation-of-duties.md: 4be91df195b87d03a508dab20f8203f501191206c3d3eb4fe5e226b0dcebeedd
+  evidence/check8-approvals-capture.md: 7d35c50723637be691856baa7ec0e2876f251e863eadcd3edfb2a9267c7a35a3
+  evidence/check8-state-walk.md: a4ed6d7aece7f8a1d8e1463ba24e47269aea941aa1fb73607ac9dbcd6a60964a
+  evidence/check8_capture.py: bd36ee43721100350dbcd7acc5817b650f311df5fa80e045e87c69ec4831bcd2
+  evidence/check8_state_walk.py: d44735dbc917c4530436f25aa9f92450118ec5de519bd607553b19ccd2ce3814
+  evidence/check9-release-gate.md: 1be87117ddd7c26ca392eb9c70dcebb57a5fb5244d58d48225a357ea2b3a4277
+  evidence/check9_capture_dce.py: 7e666520c969e647dfa39499d29da48003d7e8a0731bf53bf4367ade08870442
+  evidence/check9_capture_human.py: 078fbccca3934c042e07b47c8729cad8e27867454617afbb6faa31d1d5f4c83a
+  evidence/check9_capture_pjm.py: 4fb55846df9010c4bc0fd41c7216905b27f115d4c519fd24ac39a3b3ff118725
+  log.jsonl: a3b0cee4fd1b7489e522cb18342bbe6b92d99bec1f624b318e2cca9affbef6cc
+  state.yaml: 49dc651eeedf22896ddd5cdadf386e4b30a1d685d223996a39210245ad428165
+  task.yaml: 3d9f92eb3758fb0a683ccf43bbfd662f0fe17621aa8115ea1bd7437db5c695fc
+references:
+  pull_requests:
+  - 53
+  - 58
+  - 61
+  ci_runs: []
+gate_records:
+- gates/GATE-TASK-001-DCE-1.yaml
+- gates/GATE-TASK-001-DPC-1.yaml
+- gates/GATE-TASK-001-HUMAN-1.yaml
+- gates/GATE-TASK-001-PJM-1.yaml
+- gates/GATE-TASK-001-SAT-1.yaml
+- gates/GATE-TASK-001-SSE-1.yaml
+completeness:
+  checks:
+    task_envelope: true
+    state_transitions: true
+    action_trace: true
+    cost_tokens: true
+    transcripts: true
+    final_status_recorded: true
+  transcripts: []
+  model_calls: 0
+  complete: true
