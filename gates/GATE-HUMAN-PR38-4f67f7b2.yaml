@@ -1,0 +1,29 @@
+# Gate Decision Record (v2 §8) — emitted by gate-writer (B5.2)
+gate_id: GATE-HUMAN-PR38-4f67f7b2
+artifact_or_release: 'PR #38: Row 9: kill-switch drilled — hardening complete'
+gate_owner: HUMAN
+decision: APPROVED
+criteria_version: v2§8/v1§15 handoff rev 1
+evidence:
+- https://github.com/msomali/company/pull/38
+- https://github.com/msomali/company/pull/38#pullrequestreview-4727553558
+- merge:4f67f7b260a2a2e8b0e44026c3822ab9bf02fe4f
+findings:
+- '- Drill 2 ran the FIXED script: HEAD a2b17ae confirmed as PR #35''s merge commit
+  on main (checked in git, not taken from the PR text).'
+- '- All three row-9 closure legs from killswitch-drill.md are evidenced: gateway
+  sever with connectivity probe ECONNREFUSED 127.0.0.1:18789 (§78 row 28 Mode-S revocation
+  — the leg the first drill never fired), freeze/unfreeze with lock_branch read-backs
+  captured true → false at action time, scripted resume with evidence-dir reuse and
+  live-derived key path/title in the printed commands (defects 1/4/5 exercised).'
+- '- Key lifecycle consistent: 157550550 revoked during drill 1, 157623533 minted
+  at restore, matches the 20:01 report.'
+- '- Honest disclosure of the dispatcher-start no-op (already active since 19:53)
+  — noted and appreciated; it doesn''t undermine the leg, resume''s DONE + status
+  output cover it.'
+- 'Nits (non-blocking, all in owner-voice cells so left untouched):'
+conditions: []
+expires: null
+next_owner: Bootstrap agent (review), then owner (merge).
+decided_at: '2026-07-18T03:36:00Z'
+approval_message_ref: https://github.com/msomali/company/pull/38#pullrequestreview-4727553558
