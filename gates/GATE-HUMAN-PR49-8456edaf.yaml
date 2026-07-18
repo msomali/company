@@ -1,0 +1,16 @@
+# Gate Decision Record (v2 §8) — emitted by gate-writer (B5.2)
+gate_id: GATE-HUMAN-PR49-8456edaf
+artifact_or_release: 'PR #49: B7.1: sign PROJECT-000 charter'
+gate_owner: HUMAN
+decision: APPROVED
+criteria_version: v2§8/v1§15 handoff rev 1
+evidence:
+- https://github.com/msomali/company/pull/49
+- https://github.com/msomali/company/pull/49#pullrequestreview-4728848692
+- merge:8456edaf3d88ad3828855e4674162eb83f832202
+findings: []
+conditions: []
+expires: null
+next_owner: Bootstrap agent (review), then owner (merge).
+decided_at: '2026-07-18T16:33:01Z'
+approval_message_ref: https://github.com/msomali/company/pull/49#pullrequestreview-4728848692
