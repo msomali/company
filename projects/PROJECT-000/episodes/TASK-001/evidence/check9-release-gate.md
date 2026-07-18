@@ -36,8 +36,19 @@ Drivers: `check9_capture_dce.py`, `check9_capture_pjm.py`; both records'
 - Result (blocked leg): **PASS** — merge to the release branch without the
   human APPROVE is blocked by required reviews.
 
-## Step 5 — succeeds leg (owner)
+## Step 5 — succeeds leg (COMPLETE)
 
-Pending at time of writing: owner issues `APPROVE TASK-001 HUMAN` on PR
-#61 (capture emits `GATE-TASK-001-HUMAN-1.yaml`, state → DEPLOYMENT),
-approves, and merges. Evidence to be appended on completion.
+1. Owner issued `APPROVE TASK-001 HUMAN` as COMMENTED review 4729388103
+   on PR #61 (@msomali, API-verified).
+2. Captured pre-merge (driver `check9_capture_human.py`):
+   `GATE-TASK-001-HUMAN-1.yaml` emitted (`ref_ok=True`,
+   decided_at 2026-07-18T22:17:13Z); state → `DEPLOYMENT` (commit
+   `39392b4`) — the authorization record precedes the release act.
+3. Owner formal Approve + merge: PR #61 merged by @msomali —
+   **merge SHA `f9bb463ba06539e40da180b52402da0b64d3d089`** (API:
+   merged=true, merged_by=msomali).
+
+- Result (succeeds leg): **PASS** — the same merge that returned 405
+  without the human APPROVE succeeded after it; `GATE-TASK-001-HUMAN-1`
+  binds the two legs.
+- **Check 9 overall: PASS.**
