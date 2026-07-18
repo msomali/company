@@ -1,0 +1,17 @@
+# §88 check 2 fixture — INVALID: acceptance_criteria missing. task-create
+# must reject listing the field, exit nonzero, create nothing, and make no
+# model call (structural: the module imports no model client).
+project_id: PROJECT-000
+requested_by: PJM
+assigned_role: SDE
+objective: Implement slugify(title) per charter scope with edge-case and property tests.
+business_context: PROJECT-000 synthetic dry run — rejection path.
+required_outputs: [src/slugify.py, tests/test_slugify.py]
+risk_class: low
+tier: T2
+data_classification: internal
+priority: medium
+budgets:
+  wall_clock_minutes: 120
+  tool_call_limit: 100
+  model_budget_tag: dryrun
