@@ -1,0 +1,16 @@
+# Gate Decision Record (v2 §8) — emitted by gate-writer (B5.2)
+gate_id: GATE-HUMAN-PR43-87807ac9
+artifact_or_release: 'PR #43: v2.7: correct bot credential + add infrastructure identity'
+gate_owner: HUMAN
+decision: APPROVED
+criteria_version: v2§8/v1§15 handoff rev 1
+evidence:
+- https://github.com/msomali/company/pull/43
+- https://github.com/msomali/company/pull/43#pullrequestreview-4727636891
+- merge:87807ac9a15b614442e1dc165bf78346f7d3d17a
+findings: []
+conditions: []
+expires: null
+next_owner: Bootstrap agent (review), then owner (merge).
+decided_at: '2026-07-18T04:21:02Z'
+approval_message_ref: https://github.com/msomali/company/pull/43#pullrequestreview-4727636891
