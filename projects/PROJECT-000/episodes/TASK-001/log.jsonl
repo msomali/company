@@ -1,1 +1,2 @@
 {"at": "2026-07-18T21:16:01Z", "event": "transition", "evidence": "dispatch executed check 3: recorded-run-001, prompt capture evidence/check3-dispatch-prompt.txt (digest+envelope+links verified)", "frm": "INTAKE", "to": "DISCOVERY"}
+{"at": "2026-07-18T21:16:01Z", "event": "transition", "evidence": "acceptance criteria fixed in task.yaml: unicode folding, separator trimming, deterministic property tests (envelope of record)", "frm": "DISCOVERY", "to": "REQUIREMENTS"}

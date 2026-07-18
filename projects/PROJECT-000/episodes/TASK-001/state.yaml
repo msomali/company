@@ -1,5 +1,5 @@
 task_id: TASK-001
-state: DISCOVERY
+state: REQUIREMENTS
 run_id: null
 iteration_count: 0
 rejection_cycles: 0
@@ -13,3 +13,8 @@ history:
   to: DISCOVERY
   evidence: 'dispatch executed check 3: recorded-run-001, prompt capture evidence/check3-dispatch-prompt.txt
     (digest+envelope+links verified)'
+- at: '2026-07-18T21:16:01Z'
+  from: DISCOVERY
+  to: REQUIREMENTS
+  evidence: 'acceptance criteria fixed in task.yaml: unicode folding, separator trimming,
+    deterministic property tests (envelope of record)'
