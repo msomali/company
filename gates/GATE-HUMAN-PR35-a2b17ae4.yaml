@@ -1,0 +1,17 @@
+# Gate Decision Record (v2 §8) — emitted by gate-writer (B5.2)
+gate_id: GATE-HUMAN-PR35-a2b17ae4
+artifact_or_release: 'PR #35: B4.4 drill fixes: five kill-switch defects + targeted
+  re-drill SOP (row 9)'
+gate_owner: HUMAN
+decision: APPROVED
+criteria_version: v2§8/v1§15 handoff rev 1
+evidence:
+- https://github.com/msomali/company/pull/35
+- https://github.com/msomali/company/pull/35#pullrequestreview-4727515105
+- merge:a2b17ae4c44900bb517013a2c0a27003864d8653
+findings: []
+conditions: []
+expires: null
+next_owner: Human owner (review + merge; targeted re-drill; row 9 attestation).
+decided_at: '2026-07-18T03:16:15Z'
+approval_message_ref: https://github.com/msomali/company/pull/35#pullrequestreview-4727515105

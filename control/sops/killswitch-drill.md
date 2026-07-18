@@ -123,8 +123,12 @@ Full drill 2026-07-17: executed — five defects found and fixed forward
 (see PR); containment verified except gateway sever + freeze, hence row 9
 remains open pending the targeted re-drill above.
 
-```
-REQUIRED-INPUT (owner): paste the targeted re-drill outputs here
-```
+Drill 1 — full pause, 2026-07-17 19:32 PDT (evidence: /var/company/incident-20260718T023226Z/):
+DONE: dispatcher stopped (journal: 8h16m uptime, clean stop); container 2dfe52bba53f stopped; evidence bundle written (kill-switch.log, episodes tgz, dispatcher-journal, INCIDENT-MARKER). Owner-side: deploy key revoked (ID 157550550; re-registration minted 157623533; ls-remote Permission denied while revoked). FAILED legs = script defects 1–5, documented and fixed in PR #35; restore completed manually, protection read-back clean.
 
-Attested by: REQUIRED-INPUT (owner)
+Drill 2 — targeted re-drill on fixed script (HEAD a2b17ae), 2026-07-17 ~20:15 PDT:
+Gateway severed: sudo -u mr-robot -i openclaw gateway stop → "Connectivity probe: failed / ECONNREFUSED 127.0.0.1:18789" (§78 row 28 Mode-S revocation demonstrated). Freeze/unfreeze: lock_branch read-backs captured true → false, all protections intact throughout. Scripted resume: evidence dir reused (defect-1 fix), owner commands printed with live-derived key path/title (defect-4/5 fix), DONE on both starts; status: dispatcher active, gateway up, bootstrap container up. Dispatcher start was a no-op (already active since 19:53 recovery — journal). Post-resume gateway probe ok; dashboard re-authed.
+
+Row 9 closes on this evidence. MEM-ORG-0002 records the generalized lesson.
+
+Attested by: msomali, 2026-07-17
