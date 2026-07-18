@@ -17,4 +17,4 @@ Row guidance (field-validated 2026-07-15, OpenClaw 2026.7.1 — see PHASE-0-RUNB
 - Row 5: doctor's "Eligible: N" counts *bundled platform* skills, not installs — the evidence claim is zero **installed** skills.
 - Row 6: Mode S custody = Anthropic setup-token (long-lived) + OpenAI OAuth (auto-refresh) in per-agent auth stores; record the accepted audit baseline. Command owner: unset is correct at zero channels. Provider API keys exist but are never placed (ADR-B003).
 
-Attested by: msomali (human owner) — completes B0.1 on commit; row 4 remains open (egress allowlist) by the annex's own progressive design and closes before §87; all other rows closed remain open by the annex's own progressive design and close before §87.
+Attested by: msomali (human owner) — completes B0.1 on commit; row 4 (egress allowlist) remains open by the annex's own progressive design and closes before §87; all other rows are closed.
