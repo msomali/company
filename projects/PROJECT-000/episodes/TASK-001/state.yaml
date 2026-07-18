@@ -1,5 +1,5 @@
 task_id: TASK-001
-state: REQUIREMENTS
+state: DESIGN
 run_id: null
 iteration_count: 0
 rejection_cycles: 0
@@ -18,3 +18,8 @@ history:
   to: REQUIREMENTS
   evidence: 'acceptance criteria fixed in task.yaml: unicode folding, separator trimming,
     deterministic property tests (envelope of record)'
+- at: '2026-07-18T21:16:01Z'
+  from: REQUIREMENTS
+  to: DESIGN
+  evidence: 'design recorded: notes/slugify-implementation.md ''Approach'' (NFKD fold
+    + ascii round-trip + single-regex collapse), merged via PR #53'
