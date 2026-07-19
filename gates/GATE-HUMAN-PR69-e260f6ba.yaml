@@ -1,0 +1,17 @@
+# Gate Decision Record (v2 §8) — emitted by gate-writer (B5.2)
+gate_id: GATE-HUMAN-PR69-e260f6ba
+artifact_or_release: 'PR #69: MEM-ORG-0005: no-stacking + merge-race rules; restore
+  orphaned P3 decision (audit find #2)'
+gate_owner: HUMAN
+decision: APPROVED
+criteria_version: v2§8/v1§15 handoff rev 1
+evidence:
+- https://github.com/msomali/company/pull/69
+- https://github.com/msomali/company/pull/69#pullrequestreview-4729779746
+- merge:e260f6ba2b175cab69c66aa6133bc3f4ab787bf0
+findings: []
+conditions: []
+expires: null
+next_owner: Human owner (merge + orphan disposition).
+decided_at: '2026-07-19T03:22:50Z'
+approval_message_ref: https://github.com/msomali/company/pull/69#pullrequestreview-4729779746
