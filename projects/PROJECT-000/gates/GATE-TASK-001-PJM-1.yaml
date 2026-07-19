@@ -1,0 +1,11 @@
+gate_id: GATE-TASK-001-PJM-1
+artifact_or_release: src/slugify.py, tests/test_slugify.py
+gate_owner: PJM
+decision: APPROVED
+criteria_version: policy-set-v0
+evidence:
+- https://github.com/msomali/company/pull/58#pullrequestreview-4729376823
+findings: []
+next_owner: HUMAN_RELEASE_AUTHORIZATION
+decided_at: '2026-07-18T22:08:12Z'
+approval_message_ref: https://github.com/msomali/company/pull/58#pullrequestreview-4729376823

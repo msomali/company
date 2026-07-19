@@ -1,0 +1,79 @@
+task_id: TASK-001
+state: CLOSED
+run_id: recorded-resume-001
+iteration_count: 1
+rejection_cycles: 0
+history:
+- at: '2026-07-18T17:13:30Z'
+  from: NONE
+  to: INTAKE
+  evidence: task-create from envelope-check1-valid-t2.yaml
+- at: '2026-07-18T21:16:01Z'
+  from: INTAKE
+  to: DISCOVERY
+  evidence: 'dispatch executed check 3: recorded-run-001, prompt capture evidence/check3-dispatch-prompt.txt
+    (digest+envelope+links verified)'
+- at: '2026-07-18T21:16:01Z'
+  from: DISCOVERY
+  to: REQUIREMENTS
+  evidence: 'acceptance criteria fixed in task.yaml: unicode folding, separator trimming,
+    deterministic property tests (envelope of record)'
+- at: '2026-07-18T21:16:01Z'
+  from: REQUIREMENTS
+  to: DESIGN
+  evidence: 'design recorded: notes/slugify-implementation.md ''Approach'' (NFKD fold
+    + ascii round-trip + single-regex collapse), merged via PR #53'
+- at: '2026-07-18T21:16:01Z'
+  from: DESIGN
+  to: DELIVERY_PLAN
+  evidence: 'delivery plan = PR #53 handoff package sections 1-4 (branch sde/TASK-001-slugify,
+    opened 2026-07-18)'
+- at: '2026-07-18T21:16:01Z'
+  from: DELIVERY_PLAN
+  to: IMPLEMENTATION
+  evidence: 'implementation commits b3a22a2..a31c274d on PR #53: src/slugify.py +
+    tests/test_slugify.py (516 tests initial, 521 after SAT-53-F1)'
+- at: '2026-07-18T21:16:01Z'
+  from: IMPLEMENTATION
+  to: QUALITY_REVIEW
+  evidence: '521/521 tests green at a31c274d; SAT review opened: cycle-1 record PR
+    #53 comment 5012331464 (evidence/check5-sat-two-cycle.md)'
+- at: '2026-07-18T21:45:17Z'
+  from: QUALITY_REVIEW
+  to: SECURITY_REVIEW
+  evidence: 'SAT gate APPROVED by @msomali: https://github.com/msomali/company/pull/58#pullrequestreview-4729329698'
+- at: '2026-07-18T21:45:17Z'
+  from: SECURITY_REVIEW
+  to: PRIVACY_COMPLIANCE_REVIEW
+  evidence: 'SSE gate APPROVED by @msomali: https://github.com/msomali/company/pull/58#pullrequestreview-4729329698'
+- at: '2026-07-18T21:45:17Z'
+  from: PRIVACY_COMPLIANCE_REVIEW
+  to: PRODUCTION_READINESS
+  evidence: 'DPC gate APPROVED by @msomali: https://github.com/msomali/company/pull/58#pullrequestreview-4729329698'
+- at: '2026-07-18T22:04:07Z'
+  from: PRODUCTION_READINESS
+  to: PRODUCT_ACCEPTANCE
+  evidence: 'DCE gate APPROVED by @msomali: https://github.com/msomali/company/pull/58#pullrequestreview-4729371783'
+- at: '2026-07-18T22:08:12Z'
+  from: PRODUCT_ACCEPTANCE
+  to: HUMAN_RELEASE_AUTHORIZATION
+  evidence: 'PJM gate APPROVED by @msomali: https://github.com/msomali/company/pull/58#pullrequestreview-4729376823'
+- at: '2026-07-18T22:17:13Z'
+  from: HUMAN_RELEASE_AUTHORIZATION
+  to: DEPLOYMENT
+  evidence: 'HUMAN gate APPROVED by @msomali: https://github.com/msomali/company/pull/61#pullrequestreview-4729388103'
+- at: '2026-07-19T03:48:29Z'
+  from: DEPLOYMENT
+  to: PRODUCTION_VERIFICATION
+  evidence: 'release merged by owner: PR #61, merge f9bb463b; release branch carries
+    slugify v1.0 + notes (GATE-TASK-001-HUMAN-1 lineage)'
+- at: '2026-07-19T03:48:29Z'
+  from: PRODUCTION_VERIFICATION
+  to: OPERATIONS_AND_FEEDBACK
+  evidence: episode evidence complete through check 12; cost report shows task usage
+    post-#63 fix (3456/2531 tok, 0.16111 USD)
+- at: '2026-07-19T03:48:29Z'
+  from: OPERATIONS_AND_FEEDBACK
+  to: CLOSED
+  evidence: '§88 dry-run task complete: checks 1-12 evidenced in this episode; custody
+    drill (check 13) closes the task — terminal state'

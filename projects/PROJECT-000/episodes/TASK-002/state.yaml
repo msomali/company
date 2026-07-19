@@ -1,0 +1,14 @@
+task_id: TASK-002
+state: BLOCKED
+run_id: null
+iteration_count: 0
+rejection_cycles: 0
+history:
+- at: '2026-07-18T22:43:01Z'
+  from: NONE
+  to: INTAKE
+  evidence: task-create from envelope-check12-breaker.yaml
+- at: '2026-07-18T22:43:27Z'
+  from: INTAKE
+  to: BLOCKED
+  evidence: ESC-TASK-002.md

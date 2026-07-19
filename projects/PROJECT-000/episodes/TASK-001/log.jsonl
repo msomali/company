@@ -1,0 +1,24 @@
+{"at": "2026-07-18T21:16:01Z", "event": "transition", "evidence": "dispatch executed check 3: recorded-run-001, prompt capture evidence/check3-dispatch-prompt.txt (digest+envelope+links verified)", "frm": "INTAKE", "to": "DISCOVERY"}
+{"at": "2026-07-18T21:16:01Z", "event": "transition", "evidence": "acceptance criteria fixed in task.yaml: unicode folding, separator trimming, deterministic property tests (envelope of record)", "frm": "DISCOVERY", "to": "REQUIREMENTS"}
+{"at": "2026-07-18T21:16:01Z", "event": "transition", "evidence": "design recorded: notes/slugify-implementation.md 'Approach' (NFKD fold + ascii round-trip + single-regex collapse), merged via PR #53", "frm": "REQUIREMENTS", "to": "DESIGN"}
+{"at": "2026-07-18T21:16:01Z", "event": "transition", "evidence": "delivery plan = PR #53 handoff package sections 1-4 (branch sde/TASK-001-slugify, opened 2026-07-18)", "frm": "DESIGN", "to": "DELIVERY_PLAN"}
+{"at": "2026-07-18T21:16:01Z", "event": "transition", "evidence": "implementation commits b3a22a2..a31c274d on PR #53: src/slugify.py + tests/test_slugify.py (516 tests initial, 521 after SAT-53-F1)", "frm": "DELIVERY_PLAN", "to": "IMPLEMENTATION"}
+{"at": "2026-07-18T21:16:01Z", "event": "transition", "evidence": "521/521 tests green at a31c274d; SAT review opened: cycle-1 record PR #53 comment 5012331464 (evidence/check5-sat-two-cycle.md)", "frm": "IMPLEMENTATION", "to": "QUALITY_REVIEW"}
+{"approver": "msomali", "at": "2026-07-18T21:45:17Z", "decision": "APPROVED", "event": "gate_decision", "gate": "SAT", "record": "GATE-TASK-001-SAT-1.yaml"}
+{"at": "2026-07-18T21:45:17Z", "event": "transition", "evidence": "SAT gate APPROVED by @msomali: https://github.com/msomali/company/pull/58#pullrequestreview-4729329698", "frm": "QUALITY_REVIEW", "to": "SECURITY_REVIEW"}
+{"approver": "msomali", "at": "2026-07-18T21:45:17Z", "decision": "APPROVED", "event": "gate_decision", "gate": "SSE", "record": "GATE-TASK-001-SSE-1.yaml"}
+{"at": "2026-07-18T21:45:17Z", "event": "transition", "evidence": "SSE gate APPROVED by @msomali: https://github.com/msomali/company/pull/58#pullrequestreview-4729329698", "frm": "SECURITY_REVIEW", "to": "PRIVACY_COMPLIANCE_REVIEW"}
+{"approver": "msomali", "at": "2026-07-18T21:45:17Z", "decision": "APPROVED", "event": "gate_decision", "gate": "DPC", "record": "GATE-TASK-001-DPC-1.yaml"}
+{"at": "2026-07-18T21:45:17Z", "event": "transition", "evidence": "DPC gate APPROVED by @msomali: https://github.com/msomali/company/pull/58#pullrequestreview-4729329698", "frm": "PRIVACY_COMPLIANCE_REVIEW", "to": "PRODUCTION_READINESS"}
+{"approver": "msomali", "at": "2026-07-18T22:04:07Z", "decision": "APPROVED", "event": "gate_decision", "gate": "DCE", "record": "GATE-TASK-001-DCE-1.yaml"}
+{"at": "2026-07-18T22:04:07Z", "event": "transition", "evidence": "DCE gate APPROVED by @msomali: https://github.com/msomali/company/pull/58#pullrequestreview-4729371783", "frm": "PRODUCTION_READINESS", "to": "PRODUCT_ACCEPTANCE"}
+{"approver": "msomali", "at": "2026-07-18T22:08:12Z", "decision": "APPROVED", "event": "gate_decision", "gate": "PJM", "record": "GATE-TASK-001-PJM-1.yaml"}
+{"at": "2026-07-18T22:08:12Z", "event": "transition", "evidence": "PJM gate APPROVED by @msomali: https://github.com/msomali/company/pull/58#pullrequestreview-4729376823", "frm": "PRODUCT_ACCEPTANCE", "to": "HUMAN_RELEASE_AUTHORIZATION"}
+{"approver": "msomali", "at": "2026-07-18T22:17:13Z", "decision": "APPROVED", "event": "gate_decision", "gate": "HUMAN", "record": "GATE-TASK-001-HUMAN-1.yaml"}
+{"at": "2026-07-18T22:17:13Z", "event": "transition", "evidence": "HUMAN gate APPROVED by @msomali: https://github.com/msomali/company/pull/61#pullrequestreview-4729388103", "frm": "HUMAN_RELEASE_AUTHORIZATION", "to": "DEPLOYMENT"}
+{"at": "2026-07-18T22:30:02Z", "estimated_cost_usd": 0.09225, "event": "model_usage", "input_tokens": 895, "model": "anthropic/claude-fable-5", "output_tokens": 1666}
+{"at": "2026-07-18T22:30:02Z", "estimated_cost_usd": 0.06886, "event": "model_usage", "input_tokens": 2561, "model": "anthropic/claude-fable-5", "output_tokens": 865}
+{"at": "2026-07-19T03:48:29Z", "event": "dispatch", "role": "SDE", "run_id": "recorded-resume-001"}
+{"at": "2026-07-19T03:48:29Z", "event": "transition", "evidence": "release merged by owner: PR #61, merge f9bb463b; release branch carries slugify v1.0 + notes (GATE-TASK-001-HUMAN-1 lineage)", "frm": "DEPLOYMENT", "to": "PRODUCTION_VERIFICATION"}
+{"at": "2026-07-19T03:48:29Z", "event": "transition", "evidence": "episode evidence complete through check 12; cost report shows task usage post-#63 fix (3456/2531 tok, 0.16111 USD)", "frm": "PRODUCTION_VERIFICATION", "to": "OPERATIONS_AND_FEEDBACK"}
+{"at": "2026-07-19T03:48:29Z", "event": "transition", "evidence": "\u00a788 dry-run task complete: checks 1-12 evidenced in this episode; custody drill (check 13) closes the task \u2014 terminal state", "frm": "OPERATIONS_AND_FEEDBACK", "to": "CLOSED"}

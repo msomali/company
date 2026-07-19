@@ -1,0 +1,86 @@
+# §88 check 13 — owner mid-pause/resume terminal capture (verbatim archive)
+# Provided by owner 2026-07-18 20:54 PDT; archived unmodified below.
+
+root@mr-robot-VMware20-1:~# sudo REPO_DIR=/srv/company/repo /srv/company/repo/control/scripts/kill_switch.sh pause
+== kill switch PAUSE 20260719T033338Z (mode S primary; dry=no)
+DONE 1. stop dispatcher service
+DONE 2. stop company docker containers
+DONE 3. stop OpenClaw gateway (Mode S revocation)
+ verify now: sudo -u mr-robot -i openclaw gateway status (expect stopped);
+ if the leg shows FAIL, run the stop command in an owner window before proceeding
+SKIP 3b. Mode P proxy not running (dormant per ADR-B003)
+OWNER 4. revoke dispatcher deploy key — run with YOUR authenticated gh:
+ gh repo deploy-key list --repo msomali/company
+ gh repo deploy-key delete <id of 'dispatcher@company-vm'> --repo msomali/company
+OWNER 5. freeze protected branch main — run, then capture the read-back
+ AT FREEZE TIME (evidence requirement):
+ gh api -X PUT repos/msomali/company/branches/main/protection --input /srv/company/repo/control/sops/protection-frozen.json
+ gh api repos/msomali/company/branches/main/protection --jq .lock_branch.enabled # expect: true — paste into evidence
+DONE 6. archive episodes + logs
+DONE 7. incident marker written
+== PAUSE complete. Next: control/sops/incident.md. Resume is a
+ deliberate act: kill_switch.sh resume (unfreeze stays manual).
+root@mr-robot-VMware20-1:~# systemctl is-active company-dispatcher.service
+inactive
+root@mr-robot-VMware20-1:~# sudo -u mr-robot -i openclaw gateway status
+
+OpenClaw 2026.7.1 (2d2ddc4) — I'm the reason your shell history looks like a hacker-movie montage.
+
+│
+◇
+Service: systemd user (enabled)
+File logs: /tmp/openclaw/openclaw-2026-07-18.log
+Command: /usr/bin/node /home/mr-robot/.npm-global/lib/node_modules/openclaw/dist/index.js gateway --port 18789
+Service file: ~/.config/systemd/user/openclaw-gateway.service
+Service env: OPENCLAW_GATEWAY_PORT=18789
+
+Config (cli): ~/.openclaw/openclaw.json
+Config (service): ~/.openclaw/openclaw.json
+
+Gateway: bind=loopback (127.0.0.1), port=18789 (service args)
+Probe target: ws://127.0.0.1:18789
+Dashboard: http://127.0.0.1:18789/
+Probe note: Loopback-only gateway; only local clients can connect.
+
+Runtime: stopped (state inactive, sub dead, last exit 0, reason 1)
+Connectivity probe: failed
+Probe target: ws://127.0.0.1:18789
+ connect ECONNREFUSED 127.0.0.1:18789
+Capability: unknown
+
+Service is loaded but not running (likely exited immediately).
+File logs: /tmp/openclaw/openclaw-2026-07-18.log
+Logs: journalctl --user -u openclaw-gateway.service -n 200 --no-pager
+Restart attempts: /home/mr-robot/.openclaw/logs/gateway-restart.log
+
+Troubles: run openclaw status
+Troubleshooting: https://docs.openclaw.ai/troubleshooting
+root@mr-robot-VMware20-1:~# /srv/company/repo/control/scripts/kill_switch.sh status
+== kill switch STATUS
+dispatcher: inactive
+Service: systemd user (enabled)
+File logs: /tmp/openclaw/openclaw-2026-07-18.log
+Command: /usr/bin/node /home/mr-robot/.npm-global/lib/node_modules/openclaw/dist/index.js gateway --port 18789
+containers: none running
+root@mr-robot-VMware20-1:~# git -C /home/mr-robot/company show origin/dispatch/TASK-001:projects/PROJECT-000/episodes/TASK-001/state.yaml | head -3
+task_id: TASK-001
+state: DEPLOYMENT
+run_id: null
+root@mr-robot-VMware20-1:~# sudo /srv/company/repo/control/scripts/kill_switch.sh resume
+/srv/company/repo/control/scripts/kill_switch.sh status
+== kill switch RESUME 20260719T033649Z (dry=no; evidence: /var/company/incident-20260719T033338Z)
+NOTE: main unfreeze + deploy-key re-registration are deliberate admin
+ acts — commands printed, not executed (key path/title derived
+ from the LIVE system, drill defect 5):
+ gh api -X PUT repos/msomali/company/branches/main/protection --input control/sops/protection-normal.json
+ gh api repos/msomali/company/branches/main/protection --jq .lock_branch.enabled # expect: false — paste into evidence
+ gh repo deploy-key add <read identity path from: sudo -u dispatcher git -C /srv/company/repo config core.sshCommand>.pub --repo msomali/company --title "dispatcher@company-vm" --allow-write
+DONE 1. start OpenClaw gateway
+DONE 2. start dispatcher service (re-dispatches from state.yaml)
+== RESUME issued. Verify: kill_switch.sh status
+== kill switch STATUS
+dispatcher: active
+Service: systemd user (enabled)
+File logs: /tmp/openclaw/openclaw-2026-07-18.log
+Command: /usr/bin/node /home/mr-robot/.npm-global/lib/node_modules/openclaw/dist/index.js gateway --port 18789
+containers: none running

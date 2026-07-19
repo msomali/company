@@ -1,0 +1,8 @@
+real-repo refusal: PASS — DispatchError: agent SDE is 'contract-only', not 'active' — activation is a human act (BA-2.4); dispatch refused
+scratch dispatch: PASS — run_id=recorded-run-001, agent_id=sde
+digest inline (T2): PASS
+envelope yaml block: PASS
+envelope fields verbatim: PASS
+artifact links render (inputs variant): PASS
+scratch run_id recorded: PASS
+scratch log.jsonl written: PASS
