@@ -342,7 +342,34 @@ class Dispatcher:
                 "escalation first)"
             )
         envelope = self._read(task_dir, "task.yaml")
-        _, tool_cap = effective_caps(envelope)
+        wall_cap, tool_cap = effective_caps(envelope)
+
+        # §15/§82.3 wall-clock breaker (owner ruling 2026-07-18: core safety,
+        # not deferrable — an agent that cannot be time-bounded is as
+        # dangerous as one that cannot be call-bounded). Task start = first
+        # history timestamp; the over-deadline action is logged as evidence,
+        # then the task is BLOCKED with an ESC record — same no-retry
+        # semantics as the tool-cap path.
+        started_raw = str((state.get("history") or [{}])[0].get("at", ""))
+        if started_raw:
+            started = datetime.datetime.fromisoformat(
+                started_raw.replace("Z", "+00:00")
+            )
+            elapsed_min = (
+                datetime.datetime.now(datetime.timezone.utc) - started
+            ).total_seconds() / 60
+            if elapsed_min > wall_cap:
+                self.log(task_dir, "action", fingerprint=fingerprint, **fields)
+                esc = self.block_with_escalation(
+                    task_dir,
+                    f"wall_clock_minutes {wall_cap} exceeded "
+                    f"(elapsed {elapsed_min:.1f} min since {started_raw})",
+                )
+                raise DispatchError(
+                    f"breaker: wall_clock_minutes {wall_cap} exceeded "
+                    f"({elapsed_min:.1f} min elapsed) — task BLOCKED "
+                    f"({esc.name})"
+                )
         log_path = task_dir / "log.jsonl"
         prior = 0
         if log_path.exists():
