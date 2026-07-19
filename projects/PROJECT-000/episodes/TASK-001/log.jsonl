@@ -20,3 +20,4 @@
 {"at": "2026-07-18T22:30:02Z", "estimated_cost_usd": 0.06886, "event": "model_usage", "input_tokens": 2561, "model": "anthropic/claude-fable-5", "output_tokens": 865}
 {"at": "2026-07-19T03:48:29Z", "event": "dispatch", "role": "SDE", "run_id": "recorded-resume-001"}
 {"at": "2026-07-19T03:48:29Z", "event": "transition", "evidence": "release merged by owner: PR #61, merge f9bb463b; release branch carries slugify v1.0 + notes (GATE-TASK-001-HUMAN-1 lineage)", "frm": "DEPLOYMENT", "to": "PRODUCTION_VERIFICATION"}
+{"at": "2026-07-19T03:48:29Z", "event": "transition", "evidence": "episode evidence complete through check 12; cost report shows task usage post-#63 fix (3456/2531 tok, 0.16111 USD)", "frm": "PRODUCTION_VERIFICATION", "to": "OPERATIONS_AND_FEEDBACK"}

@@ -1,5 +1,5 @@
 task_id: TASK-001
-state: PRODUCTION_VERIFICATION
+state: OPERATIONS_AND_FEEDBACK
 run_id: recorded-resume-001
 iteration_count: 1
 rejection_cycles: 0
@@ -67,3 +67,8 @@ history:
   to: PRODUCTION_VERIFICATION
   evidence: 'release merged by owner: PR #61, merge f9bb463b; release branch carries
     slugify v1.0 + notes (GATE-TASK-001-HUMAN-1 lineage)'
+- at: '2026-07-19T03:48:29Z'
+  from: PRODUCTION_VERIFICATION
+  to: OPERATIONS_AND_FEEDBACK
+  evidence: episode evidence complete through check 12; cost report shows task usage
+    post-#63 fix (3456/2531 tok, 0.16111 USD)
