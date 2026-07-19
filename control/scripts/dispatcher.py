@@ -141,10 +141,20 @@ def retry_decision(failure_class: str, attempt: int) -> tuple[bool, int]:
 
 
 def effective_caps(envelope: dict) -> tuple[int, int]:
+    """Tier caps are ceilings; a TIGHTER envelope budget always wins
+    (§88.12 fix 2026-07-18 — previously T1/T2 envelope budgets were
+    ignored, so a 1-tool-call budget silently became the tier's 100)."""
     tier = envelope["tier"]
+    budgets = envelope.get("budgets") or {}
     if tier in TIER_CAPS:
-        return TIER_CAPS[tier]
-    budgets = envelope["budgets"]  # T3: explicit in envelope (schema-mandatory)
+        wall_cap, tool_cap = TIER_CAPS[tier]
+        wall = budgets.get("wall_clock_minutes")
+        tools = budgets.get("tool_call_limit")
+        return (
+            min(wall_cap, wall) if isinstance(wall, int) else wall_cap,
+            min(tool_cap, tools) if isinstance(tools, int) else tool_cap,
+        )
+    # T3: explicit in envelope (schema-mandatory)
     return budgets["wall_clock_minutes"], budgets["tool_call_limit"]
 
 
@@ -312,6 +322,50 @@ class Dispatcher:
             [path, log_path], f"{task_id}: dispatched to {role} [{run_id}]"
         )
         return run_id
+
+    # -- breaker (§82.3 / §88.12) -------------------------------------------
+
+    def record_action(self, task_dir: Path, fingerprint: str, **fields) -> int:
+        """Record one tool action against the effective tool-call cap.
+
+        §88.12 breaker (added 2026-07-18 — no counting enforcement existed
+        before this): BLOCKED tasks refuse further actions; the action that
+        exceeds the cap is logged as evidence, then the task is BLOCKED
+        with an ESC record and the caller gets a typed error — no retry
+        loop is possible because both this method and dispatch() refuse
+        BLOCKED tasks. Returns the running action count.
+        """
+        state = self._read(task_dir, "state.yaml")
+        if state["state"] == "BLOCKED":
+            raise DispatchError(
+                "task is BLOCKED; no further actions (§82.3 — resolve the "
+                "escalation first)"
+            )
+        envelope = self._read(task_dir, "task.yaml")
+        _, tool_cap = effective_caps(envelope)
+        log_path = task_dir / "log.jsonl"
+        prior = 0
+        if log_path.exists():
+            prior = sum(
+                1 for line in log_path.read_text(encoding="utf-8").splitlines()
+                if json.loads(line).get("event") == "action"
+            )
+        self.log(task_dir, "action", fingerprint=fingerprint, **fields)
+        count = prior + 1
+        if count > tool_cap:
+            esc = self.block_with_escalation(
+                task_dir,
+                f"tool_call_limit {tool_cap} exceeded (action #{count})",
+            )
+            raise DispatchError(
+                f"breaker: tool_call_limit {tool_cap} exceeded at action "
+                f"#{count} — task BLOCKED ({esc.name})"
+            )
+        loop = self.check_loops(task_dir)
+        if loop:
+            self.block_with_escalation(task_dir, loop)
+            raise DispatchError(f"loop cap: {loop} — task BLOCKED")
+        return count
 
     # -- loop detection (§82.3) ---------------------------------------------
 
