@@ -1,5 +1,5 @@
 task_id: TASK-001
-collected_at: '2026-07-19T03:54:47Z'
+collected_at: '2026-07-19T22:31:23Z'
 final_state: CLOSED
 rejection_cycles: 0
 iteration_count: 1
@@ -12,6 +12,7 @@ files:
   evidence/check13-owner-pause-capture.txt: 99413edcde43415c9ec183f6dd9c025e1647e450439e6dcf594095694a0efb1c
   evidence/check13-redispatch-prompt.txt: 6e9209f9b46e145af3543e47f10e05b362c9475437047a665f381457f8be8cc1
   evidence/check13_redispatch.py: 8bd19d69373c8678ee9269ea364a74487017e3245ce3cf1de6a397e4aeb044bc
+  evidence/check14-eval-ci-release.md: f60c9789482033779955796eb7f79c3c68ba52525eb73773db9d428034e96288
   evidence/check2-rejection.md: 80bc649063ec45cb703086a6d4bf672945d3bbb05b32da542c54f3dfdff0fe11
   evidence/check3-dispatch-prompt-contract.md: 2e23c86d24316379699a224263f76b8df50022fa9c9a4ba8cda6226175f99439
   evidence/check3-dispatch-prompt-inputs-variant.txt: 71c81e6e820ee1ec89b12c346dc95412564dec816e198beb6daa6c1774ba20d8
