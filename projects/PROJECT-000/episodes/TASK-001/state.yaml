@@ -1,7 +1,7 @@
 task_id: TASK-001
 state: DEPLOYMENT
-run_id: null
-iteration_count: 0
+run_id: recorded-resume-001
+iteration_count: 1
 rejection_cycles: 0
 history:
 - at: '2026-07-18T17:13:30Z'

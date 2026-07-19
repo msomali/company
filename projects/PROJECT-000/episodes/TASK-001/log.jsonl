@@ -18,3 +18,4 @@
 {"at": "2026-07-18T22:17:13Z", "event": "transition", "evidence": "HUMAN gate APPROVED by @msomali: https://github.com/msomali/company/pull/61#pullrequestreview-4729388103", "frm": "HUMAN_RELEASE_AUTHORIZATION", "to": "DEPLOYMENT"}
 {"at": "2026-07-18T22:30:02Z", "estimated_cost_usd": 0.09225, "event": "model_usage", "input_tokens": 895, "model": "anthropic/claude-fable-5", "output_tokens": 1666}
 {"at": "2026-07-18T22:30:02Z", "estimated_cost_usd": 0.06886, "event": "model_usage", "input_tokens": 2561, "model": "anthropic/claude-fable-5", "output_tokens": 865}
+{"at": "2026-07-19T03:48:29Z", "event": "dispatch", "role": "SDE", "run_id": "recorded-resume-001"}
