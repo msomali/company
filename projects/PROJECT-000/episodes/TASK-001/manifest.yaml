@@ -1,5 +1,5 @@
 task_id: TASK-001
-collected_at: '2026-07-19T03:49:06Z'
+collected_at: '2026-07-19T03:54:47Z'
 final_state: CLOSED
 rejection_cycles: 0
 iteration_count: 1
@@ -8,6 +8,8 @@ files:
   evidence/check10-episode-completeness.md: 3025c4ac6f76b03d4fbc63fecc614114b28d08c15c44c21713ddb408b22a26d0
   evidence/check11-cost-report.md: c70cfc50a9dd971a8c044216786bffe270b1be1fc2b753affec54c4f2c10b91b
   evidence/check11_meter.py: b0a42b3c99543fc869be155f98be7c5926306eec321c2b0f005a64a467ebdc54
+  evidence/check13-killswitch-redispatch.md: ffbf446fd9b27f7ffe1a60a9c1bc1721e62f66d5974636a7cc4cb89eeab2a488
+  evidence/check13-owner-pause-capture.txt: 99413edcde43415c9ec183f6dd9c025e1647e450439e6dcf594095694a0efb1c
   evidence/check13-redispatch-prompt.txt: 6e9209f9b46e145af3543e47f10e05b362c9475437047a665f381457f8be8cc1
   evidence/check13_redispatch.py: 8bd19d69373c8678ee9269ea364a74487017e3245ce3cf1de6a397e4aeb044bc
   evidence/check2-rejection.md: 80bc649063ec45cb703086a6d4bf672945d3bbb05b32da542c54f3dfdff0fe11

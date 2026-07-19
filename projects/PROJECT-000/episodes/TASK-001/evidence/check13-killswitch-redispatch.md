@@ -12,7 +12,11 @@ containers none; `git show origin/dispatch/TASK-001:...state.yaml` read
 `state: DEPLOYMENT` — the task existed only as committed state, owned by
 no process. (Owner report 20:47 PDT; the bot session died with the
 gateway at pause and this evidence file is written by the successor
-session.)
+session.) Full raw terminal capture archived verbatim:
+`evidence/check13-owner-pause-capture.txt` (pause 20260719T033338Z →
+resume 20260719T033649Z; incident dir
+/var/company/incident-20260719T033338Z; owner-window steps 4/5 printed
+but deliberately not executed per the drill design).
 
 ## Observable (ii) — re-dispatch from persisted state (fresh process)
 
