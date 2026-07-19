@@ -1,5 +1,5 @@
 task_id: TASK-001
-state: OPERATIONS_AND_FEEDBACK
+state: CLOSED
 run_id: recorded-resume-001
 iteration_count: 1
 rejection_cycles: 0
@@ -72,3 +72,8 @@ history:
   to: OPERATIONS_AND_FEEDBACK
   evidence: episode evidence complete through check 12; cost report shows task usage
     post-#63 fix (3456/2531 tok, 0.16111 USD)
+- at: '2026-07-19T03:48:29Z'
+  from: OPERATIONS_AND_FEEDBACK
+  to: CLOSED
+  evidence: '§88 dry-run task complete: checks 1-12 evidenced in this episode; custody
+    drill (check 13) closes the task — terminal state'
