@@ -1,11 +1,15 @@
 task_id: TASK-001
-collected_at: '2026-07-18T22:22:11Z'
-final_state: DEPLOYMENT
+collected_at: '2026-07-19T03:49:06Z'
+final_state: CLOSED
 rejection_cycles: 0
-iteration_count: 0
+iteration_count: 1
 files:
   evidence/check1-task-create.md: 7ddb79a0e38684aa890cd9f48e22844121ca6e2056e1a23430fbbe0e79adc1b1
   evidence/check10-episode-completeness.md: 3025c4ac6f76b03d4fbc63fecc614114b28d08c15c44c21713ddb408b22a26d0
+  evidence/check11-cost-report.md: c70cfc50a9dd971a8c044216786bffe270b1be1fc2b753affec54c4f2c10b91b
+  evidence/check11_meter.py: b0a42b3c99543fc869be155f98be7c5926306eec321c2b0f005a64a467ebdc54
+  evidence/check13-redispatch-prompt.txt: 6e9209f9b46e145af3543e47f10e05b362c9475437047a665f381457f8be8cc1
+  evidence/check13_redispatch.py: 8bd19d69373c8678ee9269ea364a74487017e3245ce3cf1de6a397e4aeb044bc
   evidence/check2-rejection.md: 80bc649063ec45cb703086a6d4bf672945d3bbb05b32da542c54f3dfdff0fe11
   evidence/check3-dispatch-prompt-contract.md: 2e23c86d24316379699a224263f76b8df50022fa9c9a4ba8cda6226175f99439
   evidence/check3-dispatch-prompt-inputs-variant.txt: 71c81e6e820ee1ec89b12c346dc95412564dec816e198beb6daa6c1774ba20d8
@@ -23,9 +27,12 @@ files:
   evidence/check9_capture_dce.py: 7e666520c969e647dfa39499d29da48003d7e8a0731bf53bf4367ade08870442
   evidence/check9_capture_human.py: 078fbccca3934c042e07b47c8729cad8e27867454617afbb6faa31d1d5f4c83a
   evidence/check9_capture_pjm.py: 4fb55846df9010c4bc0fd41c7216905b27f115d4c519fd24ac39a3b3ff118725
-  log.jsonl: a3b0cee4fd1b7489e522cb18342bbe6b92d99bec1f624b318e2cca9affbef6cc
-  state.yaml: 49dc651eeedf22896ddd5cdadf386e4b30a1d685d223996a39210245ad428165
+  log.jsonl: 111c81bfc01588abcfdadb848d49fd44595a0294f44fd1ae861ba108a65db332
+  state.yaml: 5b091dee854f0318c159771ac35cd53b8ccd5bb6f574f5bf2a49d8fdc0d55d9d
   task.yaml: 3d9f92eb3758fb0a683ccf43bbfd662f0fe17621aa8115ea1bd7437db5c695fc
+  transcripts/call-1-sde.md: 2cc5ab7da0aaced5f76cf93d0515410152022aa648c0e668b220483ce535ab05
+  transcripts/call-2-sat.md: ed57c589a48daf527d9dd02b192d45b9c60eec78ed0737723c49caa52c93ddcd
+  usage.yaml: 212a3d4e89f435f50402733bf04ecf338ee68aa71777e725f424714e4ebc6c84
 references:
   pull_requests:
   - 53
@@ -47,6 +54,8 @@ completeness:
     cost_tokens: true
     transcripts: true
     final_status_recorded: true
-  transcripts: []
-  model_calls: 0
+  transcripts:
+  - call-1-sde.md
+  - call-2-sat.md
+  model_calls: 2
   complete: true
