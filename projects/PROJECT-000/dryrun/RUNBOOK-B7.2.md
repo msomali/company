@@ -4,7 +4,7 @@ title: B7.2 dry-run runbook — §88 checks 1–5, 7, 10–14 (joint)
 type: runbook
 project: PROJECT-000
 owner: bootstrap agent (agenticfoundrybot)
-version: "1.7"
+version: "1.8"
 status: READY_FOR_REVIEW
 sensitivity: internal
 created: "2026-07-17"
@@ -47,6 +47,14 @@ Joint execution (BA-6 row B7.2); evidence target: episode package(s) under
   required checks, reverting after B7.3. Alternative: red-check + owner
   refuses merge (policy block, not mechanical). Owner's call; evidence notes
   which form ran.
+  - **DECIDED 2026-07-18 (owner):** `evals` is temporarily added to
+    required checks **for the check-14 window only**, bracketed with
+    before/after branch-protection read-backs, and reverted immediately
+    after — same discipline as the freeze drill (2026-07-17). Evidence in
+    the episode: both read-backs + the red→green eval CI runs.
+    **Evals-required is a dry-run-window state, not the steady config**;
+    steady-state evals-required is decided at the post-bootstrap
+    branch-protection review.
 
 ## Fixtures (this PR)
 
@@ -229,6 +237,13 @@ merge `f9bb463b`).
   (wall-clock check in `record_action()` against the effective cap, task
   start = first history timestamp; breach → logged, BLOCKED + ESC, same
   no-retry semantics; unit tests).
+- (process, 2026-07-18 17:58 audit) **Merge-race orphan — P3 decision:**
+  PR #51 merged head `8459b25` while the P3 recording commit (`8568cf0`,
+  09:40:51 PDT) was landing — the commit lost the race and sat orphaned
+  ~8h; "P1/P2/P3 recorded on main" was believed by both parties. Found in
+  the owner-ordered blast-radius audit; restored by cherry-pick (runbook
+  v1.8). Rule now MEM-ORG-0005: a merge delivers only the SHA it merged —
+  verify `merge-base --is-ancestor` after every merge.
 - (process, 2026-07-18) **Stacked-PR orphan:** PR #65 (breaker) was based
   on PR #63's branch; #63 merged to main from an earlier branch state, so
   #65's merge landed on an already-abandoned base and never reached main
