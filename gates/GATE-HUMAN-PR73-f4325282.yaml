@@ -1,0 +1,18 @@
+# Gate Decision Record (v2 §8) — emitted by gate-writer (B5.2)
+gate_id: GATE-HUMAN-PR73-f4325282
+artifact_or_release: 'PR #73: §88 check 14: eval bundle — golden task SDE-GT-003 (red
+  leg: deliberate fixture defect)'
+gate_owner: HUMAN
+decision: APPROVED
+criteria_version: v2§8/v1§15 handoff rev 1
+evidence:
+- https://github.com/msomali/company/pull/73
+- https://github.com/msomali/company/pull/73#pullrequestreview-4730094731
+- merge:f43252825995351599447a8b33c890297e6e0855
+findings: []
+conditions: []
+expires: null
+next_owner: Bootstrap agent (red-leg evidence, fix commit), then human owner (merge
+  + tag + revert).
+decided_at: '2026-07-19T04:53:17Z'
+approval_message_ref: https://github.com/msomali/company/pull/73#pullrequestreview-4730094731

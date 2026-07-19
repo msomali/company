@@ -1,0 +1,27 @@
+# §88 check 14 vehicle — golden task for the post-SAT slugify contract
+# (mixed-script pinning per SAT-53-F1, TASK-001). expect: pass — this case
+# MUST pass; the check-14 red leg ships the fixture with a deliberate
+# implementation defect, proving eval CI blocks a failing golden task.
+case_id: SDE-GT-003
+description: Slugify golden task including the SAT-53-F1 non-decomposable-script contract.
+fixture: fixture-003
+expect: pass
+input_envelope:
+  task_id: TASK-902
+  project_id: PROJECT-000
+  requested_by: PJM
+  assigned_role: SDE
+  objective: Implement slugify(title) per TASK-001 contract incl. mixed-script pinning.
+  acceptance_criteria: [unicode folding, separator trimming, non-decomposable scripts drop out (pinned)]
+  required_outputs: [src/slugify.py, tests/test_slugify.py]
+  risk_class: low
+  tier: T1
+  data_classification: internal
+  priority: medium
+  budgets: {wall_clock_minutes: 30, tool_call_limit: 25, model_budget_tag: eval}
+checks:
+  - {kind: file_exists,   path: src/slugify.py}
+  - {kind: file_exists,   path: tests/test_slugify.py}
+  - {kind: command_passes, cmd: "{python} -m pytest -q tests/test_slugify.py"}
+  - {kind: forbidden_pattern_absent, pattern: "(?i)api[_-]?key\\s*[:=]"}
+  - {kind: budget_respected, field: tool_call_limit}

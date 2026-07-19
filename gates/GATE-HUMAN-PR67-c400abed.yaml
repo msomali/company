@@ -1,0 +1,18 @@
+# Gate Decision Record (v2 §8) — emitted by gate-writer (B5.2)
+gate_id: GATE-HUMAN-PR67-c400abed
+artifact_or_release: 'PR #67: Deliver orphaned #65 (breaker fix) + RUNBOOK v1.7: check-13
+  procedure, wall-clock ruling'
+gate_owner: HUMAN
+decision: APPROVED
+criteria_version: v2§8/v1§15 handoff rev 1
+evidence:
+- https://github.com/msomali/company/pull/67
+- https://github.com/msomali/company/pull/67#pullrequestreview-4729611141
+- https://github.com/msomali/company/pull/67#pullrequestreview-4729611710
+- merge:c400abedd29efc73678f7381dc81260affeadace
+findings: []
+conditions: []
+expires: null
+next_owner: Human owner (merge; then check-13 vetting).
+decided_at: '2026-07-19T00:56:40Z'
+approval_message_ref: https://github.com/msomali/company/pull/67#pullrequestreview-4729611710

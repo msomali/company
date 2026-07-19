@@ -1,3 +1,4 @@
+import datetime
 import json
 from pathlib import Path
 
@@ -237,6 +238,87 @@ def test_tier_caps():
 
 
 # ------------------------------------------------------- loops & escalation
+
+def test_effective_caps_envelope_tightens_tier(world):
+    """§88.12: a tighter envelope budget wins over the tier ceiling."""
+    env = {"tier": "T2",
+           "budgets": {"wall_clock_minutes": 30, "tool_call_limit": 1}}
+    assert dp.effective_caps(env) == (30, 1)
+    # looser envelope budgets never raise the tier ceiling
+    env = {"tier": "T1",
+           "budgets": {"wall_clock_minutes": 999, "tool_call_limit": 999}}
+    assert dp.effective_caps(env) == (30, 25)
+
+
+def test_breaker_second_action_blocks_at_cap_one(world):
+    """§88.12: cap 1 — first action ok; second is logged then BLOCKED with
+    an ESC record; further actions and dispatch are refused (no retry)."""
+    root, d, task_id = world
+    td = d.task_dir("PROJECT-000", task_id)
+    task = yaml.safe_load((td / "task.yaml").read_text())
+    task["budgets"]["tool_call_limit"] = 1
+    (td / "task.yaml").write_text(yaml.safe_dump(task, sort_keys=False))
+
+    assert d.record_action(td, "probe:step-1") == 1
+    with pytest.raises(dp.DispatchError) as exc:
+        d.record_action(td, "probe:step-2")
+    assert "breaker: tool_call_limit 1 exceeded" in str(exc.value)
+
+    state = yaml.safe_load((td / "state.yaml").read_text())
+    assert state["state"] == "BLOCKED"
+    assert (td / f"ESC-{task_id}.md").exists()
+    # both actions were logged as evidence
+    actions = [json.loads(l) for l in (td / "log.jsonl").read_text().splitlines()
+               if json.loads(l).get("event") == "action"]
+    assert len(actions) == 2
+    # no retry loop: further actions refused…
+    with pytest.raises(dp.DispatchError, match="BLOCKED"):
+        d.record_action(td, "probe:step-3")
+    # …and dispatch refuses too
+    with pytest.raises(dp.DispatchError, match="BLOCKED"):
+        d.dispatch("PROJECT-000", task_id)
+    # exactly 2 actions remain logged — the refused third never landed
+    actions = [json.loads(l) for l in (td / "log.jsonl").read_text().splitlines()
+               if json.loads(l).get("event") == "action"]
+    assert len(actions) == 2
+
+
+def test_wall_clock_breaker_blocks_over_deadline_action(world):
+    """§15 wall-clock breaker (owner ruling 2026-07-18): an action arriving
+    after the effective wall-clock cap is logged, then the task is BLOCKED
+    with an ESC record; further actions/dispatch refused."""
+    root, d, task_id = world
+    td = d.task_dir("PROJECT-000", task_id)
+    # age the task: first history entry 10 hours ago (cap: T1 default 30 min)
+    state = yaml.safe_load((td / "state.yaml").read_text())
+    old = (datetime.datetime.now(datetime.timezone.utc)
+           - datetime.timedelta(hours=10)).isoformat(timespec="seconds")
+    state["history"][0]["at"] = old.replace("+00:00", "Z")
+    (td / "state.yaml").write_text(yaml.safe_dump(state, sort_keys=False))
+
+    with pytest.raises(dp.DispatchError) as exc:
+        d.record_action(td, "probe:late-action")
+    assert "wall_clock_minutes" in str(exc.value) and "BLOCKED" in str(exc.value)
+    after = yaml.safe_load((td / "state.yaml").read_text())
+    assert after["state"] == "BLOCKED"
+    assert (td / f"ESC-{task_id}.md").exists()
+    esc_text = (td / f"ESC-{task_id}.md").read_text()
+    assert "wall_clock_minutes" in esc_text
+    # the over-deadline action was logged as evidence
+    actions = [json.loads(l) for l in (td / "log.jsonl").read_text().splitlines()
+               if json.loads(l).get("event") == "action"]
+    assert len(actions) == 1
+    # no retry: further actions refused
+    with pytest.raises(dp.DispatchError, match="BLOCKED"):
+        d.record_action(td, "probe:after-block")
+
+
+def test_wall_clock_within_budget_passes(world):
+    """A fresh task (seconds old) is nowhere near the cap; actions pass."""
+    root, d, task_id = world
+    td = d.task_dir("PROJECT-000", task_id)
+    assert d.record_action(td, "probe:fresh") == 1
+
 
 def test_loop_detection_identical_action_x3(world):
     root, d, task_id = world

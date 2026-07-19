@@ -1,0 +1,18 @@
+# Gate Decision Record (v2 §8) — emitted by gate-writer (B5.2)
+gate_id: GATE-HUMAN-PR63-7bf48bae
+artifact_or_release: 'PR #63: §88.11 fix: metrics_weekly episode discovery + metering
+  usage format'
+gate_owner: HUMAN
+decision: APPROVED
+criteria_version: v2§8/v1§15 handoff rev 1
+evidence:
+- https://github.com/msomali/company/pull/63
+- https://github.com/msomali/company/pull/63#pullrequestreview-4729415124
+- https://github.com/msomali/company/pull/63#pullrequestreview-4729416028
+- merge:7bf48baede717447c4ee8ff6472c7df01a3324e0
+findings: []
+conditions: []
+expires: null
+next_owner: Human owner (review/merge).
+decided_at: '2026-07-18T22:39:30Z'
+approval_message_ref: https://github.com/msomali/company/pull/63#pullrequestreview-4729416028

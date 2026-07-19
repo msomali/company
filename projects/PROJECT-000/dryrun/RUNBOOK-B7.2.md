@@ -4,7 +4,7 @@ title: B7.2 dry-run runbook — §88 checks 1–5, 7, 10–14 (joint)
 type: runbook
 project: PROJECT-000
 owner: bootstrap agent (agenticfoundrybot)
-version: "1.3"
+version: "1.8"
 status: READY_FOR_REVIEW
 sensitivity: internal
 created: "2026-07-17"
@@ -47,6 +47,14 @@ Joint execution (BA-6 row B7.2); evidence target: episode package(s) under
   required checks, reverting after B7.3. Alternative: red-check + owner
   refuses merge (policy block, not mechanical). Owner's call; evidence notes
   which form ran.
+  - **DECIDED 2026-07-18 (owner):** `evals` is temporarily added to
+    required checks **for the check-14 window only**, bracketed with
+    before/after branch-protection read-backs, and reverted immediately
+    after — same discipline as the freeze drill (2026-07-17). Evidence in
+    the episode: both read-backs + the red→green eval CI runs.
+    **Evals-required is a dry-run-window state, not the steady config**;
+    steady-state evals-required is decided at the post-bootstrap
+    branch-protection review.
 
 ## Fixtures (this PR)
 
@@ -87,6 +95,82 @@ the claim); the owner verifies claimed attribution at merge (C6 backstop).
 Check 7's first run demonstrated the failure: emitted `GATE-HUMAN-PR53`
 superseded by PR-body claim + workflow_dispatch replay → `GATE-SAT-PR53`.
 
+## Check 13 procedure (designed 2026-07-18, [A] design half; owner vets before running)
+
+**What the re-dispatch leg proves under P2(b):** task custody survives a
+hard stop. After a full pause (dispatcher service, containers, gateway all
+dead — nothing in memory survives), a FRESH dispatcher process
+reconstructs the task solely from the committed `state.yaml`/`task.yaml`,
+re-dispatches (spawn call issued; `run_id` + `iteration_count` written
+back to the real state file; history preserved, not reset), and the task
+is then driven to its terminal state by evidenced transitions.
+"Completes" under P2(b) = the state machine reaches `CLOSED` (terminal;
+`legal_transitions(CLOSED) = ∅`) — NOT a real agent finishing work; that
+is activation-era. Honesty note: TASK-001's real `state.yaml` has
+`run_id: null` (the check-3 dispatch was scratch-world by design), so the
+resume dispatch is the first recorded against the real state file; the
+"re" is resumption of genuinely in-flight work (14 history entries)
+across a hard stop.
+
+**Vehicle:** TASK-001 at `DEPLOYMENT`. TASK-002 is unusable (BLOCKED must
+stay blocked — that is check 12's evidence; dispatch refuses it). A fresh
+task parked mid-review would demand the full gate ladder again (five more
+owner approvals) to "complete"; TASK-001's remaining path
+(`DEPLOYMENT → PRODUCTION_VERIFICATION → OPERATIONS_AND_FEEDBACK →
+CLOSED`) is gate-free (approvals gate only `QUALITY_REVIEW …
+HUMAN_RELEASE_AUTHORIZATION`), with real evidence available (release
+merge `f9bb463b`).
+
+**Sequence:**
+
+1. **[A] pre-pause:** bot re-verifies all episode state committed +
+   pushed on `dispatch/TASK-001`, confirms, goes silent (the bot session
+   dies with the gateway — expected and part of the proof).
+2. **[H] pause (root):**
+   `sudo REPO_DIR=/srv/company/repo /srv/company/repo/control/scripts/kill_switch.sh pause`
+   — steps 1–3 must report DONE (dispatcher service, openclaw containers,
+   gateway). Steps 4/5 (deploy-key revoke, main freeze, C7 lever) are
+   deliberately SKIPPED: the sever/freeze legs were evidenced in the
+   2026-07-17 drill (row 9); check 13 tests custody, not sever.
+3. **[H] mid-pause inspection (the persistence proof — capture outputs):**
+   - `systemctl is-active company-dispatcher.service` → `inactive`
+   - `sudo -u mr-robot -i openclaw gateway status` → stopped
+   - `/srv/company/repo/control/scripts/kill_switch.sh status` → all down
+   - `git -C /home/mr-robot/company show origin/dispatch/TASK-001:projects/PROJECT-000/episodes/TASK-001/state.yaml | head -3`
+     → `state: DEPLOYMENT` — the task exists only as committed state,
+     owned by no process.
+4. **[H] resume (root):**
+   `sudo /srv/company/repo/control/scripts/kill_switch.sh resume` — legs
+   1–2 DONE (gateway, dispatcher service). Unfreeze/deploy-key lines
+   print but nothing was frozen/revoked this drill. Verify with
+   `kill_switch.sh status`. **Grounded expectation:** the restarted
+   systemd unit runs `dispatcher_runtime.py --daemon`, which only scans
+   and reports (idle heartbeat; dispatch structurally refuses during
+   bootstrap — manifests contract-only, BA-2.4). The unit will NOT
+   re-dispatch; the re-dispatch leg is the [A] driver under P2(b). The
+   `/srv` clone tracks `main`, so its report may show no tasks — expected,
+   not a failure.
+5. **[A] re-dispatch leg (fresh bot session after resume; owner says
+   "resumed, proceed"):** driver `check13_redispatch.py` —
+   `Dispatcher(repo_root=<real repo>, manifest_dir=<scratch copy with
+   sde.yaml flipped active — check-3 BA-2.4-safe pattern>,
+   backend=RecordingBackend, committer=BotCommitter)`;
+   `dispatch("PROJECT-000", "TASK-001")` against the REAL state file.
+   Then evidenced transitions to `CLOSED`; episode collector re-run;
+   commit + push.
+6. **Success conditions (all four required):**
+   - mid-pause capture shows `state: DEPLOYMENT` with every process down;
+   - post-resume `log.jsonl` gains
+     `{"event": "dispatch", "role": "SDE", "run_id": "recorded-resume-001"}`
+     with `state.yaml` diff `run_id: null → recorded-resume-001`,
+     `iteration_count: 0 → 1`, and the 14-entry pre-pause history intact
+     (continuity from disk, not memory) — committed as
+     `TASK-001: dispatched to SDE [recorded-resume-001]`;
+   - the captured re-dispatch prompt contains the TASK-001 envelope read
+     from disk (digest + envelope contract intact after resume);
+   - final `state: CLOSED` via evidenced transitions (terminal =
+     "completes" under P2(b)).
+
 ## Rules in force during the run
 
 - Every check's raw output lands in the episode package, not chat.
@@ -118,6 +202,66 @@ superseded by PR-body claim + workflow_dispatch replay → `GATE-SAT-PR53`.
   checks 8/9 (after check 6's numbering jump). Remedied: RUNBOOK-B7.3.md
   authored from the implemented mechanisms (approvals.py, §51 register
   interim channel, state-machine prerequisites, release-branch setup).
+- (check 9, 2026-07-18) Runbook step "release PR head `main`" was
+  unexecutable: owner cut `release` at the `main` head, zero-delta PR
+  refused by GitHub. Promotion rode `rc/TASK-001` with the release-notes
+  artifact. Procedure note: cut `release` one commit behind, or always
+  promote via an rc branch.
+- (check 11, 2026-07-18) `metrics_weekly.collect_tasks` scanned only
+  `<root>/episodes/` — a layout no project uses — so the cost report
+  showed zeros against a metered episode. Fixed: scans
+  `projects/<P>/episodes/` too.
+- (check 11, 2026-07-18) usage.yaml format divergence: `metering.py`
+  writes totals + `calls:` int; `metrics_weekly` (and its test fixture)
+  expected a per-call list — iterating the int would crash. The modules
+  were never integrated until §88.11. Fixed: totals format is read
+  natively (record-time pricing respected); list form kept for compat;
+  calls-int regression test added.
+- (check 11, 2026-07-18) Per-agent usage gap: no mechanism records WHICH
+  agent consumed tokens — `record_usage` has no agent field, so §88.11's
+  "per-agent usage" is satisfied only by documented call order under
+  P2(b). Activation-era fix candidate: `agent` param on `record_usage` +
+  log event + usage.yaml per-agent rollup.
+- (check 11, 2026-07-18; **owner-approved B7.4 work item 15:39 PDT**)
+  Weekly-metrics regeneration silently clobbers a committed report — same
+  ISO week ⇒ same filename; B6.3's first W29 report was worktree-clobbered
+  during check 11 (restored from git). Data-loss-by-design. Required fix
+  (its own change, may land post-dry-run): `metrics_weekly.py` must REFUSE
+  to overwrite an existing committed report unless explicitly forced, and
+  the force path must be loud (explicit flag + printed warning naming the
+  file being replaced).
+- (owner ruling 2026-07-18 17:35 PDT) **Wall-clock enforcement is NOT
+  deferrable** — §15 budget breakers are core safety; an agent that cannot
+  be time-bounded is as dangerous as one that cannot be call-bounded.
+  Must land before the §87 Phase-1 declaration. Shape: follow-up PR
+  (wall-clock check in `record_action()` against the effective cap, task
+  start = first history timestamp; breach → logged, BLOCKED + ESC, same
+  no-retry semantics; unit tests).
+- (process, 2026-07-18 17:58 audit) **Merge-race orphan — P3 decision:**
+  PR #51 merged head `8459b25` while the P3 recording commit (`8568cf0`,
+  09:40:51 PDT) was landing — the commit lost the race and sat orphaned
+  ~8h; "P1/P2/P3 recorded on main" was believed by both parties. Found in
+  the owner-ordered blast-radius audit; restored by cherry-pick (runbook
+  v1.8). Rule now MEM-ORG-0005: a merge delivers only the SHA it merged —
+  verify `merge-base --is-ancestor` after every merge.
+- (process, 2026-07-18) **Stacked-PR orphan:** PR #65 (breaker) was based
+  on PR #63's branch; #63 merged to main from an earlier branch state, so
+  #65's merge landed on an already-abandoned base and never reached main
+  (`record_action` absent from main; runbook v1.5–v1.6 entries likewise).
+  Caught at check-13 setup. Lesson: do not stack onto a branch whose PR
+  can merge independently — or retarget the stacked PR to main before
+  either merges. Delivered by the follow-up PR carrying this entry.
+- (check 12, 2026-07-18) **The §82.3 breaker did not exist.** All parts
+  were present (caps, action logging, loop detection, block-with-ESC) but
+  nothing counted tool actions against `tool_call_limit` — the check's
+  central mechanism was never built. Fixed: `Dispatcher.record_action()`
+  (breach action logged as evidence, then BLOCKED + ESC; BLOCKED tasks
+  refuse actions and dispatch — no retry loop possible).
+- (check 12, 2026-07-18) `effective_caps` ignored tighter envelope budgets
+  for T1/T2: the fixture's `tool_call_limit: 1` on a T2 task silently
+  became the tier's 100 — budget enforcement fiction. Fixed: tier caps are
+  ceilings, a tighter envelope budget always wins; looser never raises the
+  ceiling.
 - (check 7 replay, 2026-07-18) gate-writer's replay cannot overwrite an
   existing `gate/pr-N` branch: the CI clone lacks a remote-tracking ref for
   it, so `--force-with-lease` rejects with "stale info" (run 29656689445 —

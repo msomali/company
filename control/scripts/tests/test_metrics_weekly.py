@@ -127,6 +127,48 @@ def test_tasks_with_episode_and_cost(tmp_path):
     assert t["estimated_cost_usd"] == 15.0
 
 
+def test_projects_episodes_layout_and_metering_usage_format(tmp_path):
+    """§88.11 fix: episodes under projects/<P>/episodes/ are found, and
+    metering.py's real usage.yaml format (totals + calls:int) is priced
+    from its record-time totals."""
+    (tmp_path / "control/models").mkdir(parents=True)
+    (tmp_path / "control/models/prices.yaml").write_text(
+        "as_of: 2026-07-16\nmodels:\n  m/x: {input_per_mtok: 10.0, output_per_mtok: 50.0}\n"
+    )
+    task = tmp_path / "projects/PROJECT-000/episodes/TASK-001"
+    task.mkdir(parents=True)
+    (task / "state.yaml").write_text(
+        "task_id: TASK-001\nstate: DEPLOYMENT\nhistory:\n"
+        "  - {at: '2026-07-17T10:00:00Z', from: NONE, to: INTAKE, evidence: e}\n"
+        "  - {at: '2026-07-17T10:30:00Z', from: INTAKE, to: DISCOVERY, evidence: e}\n"
+    )
+    (task / "usage.yaml").write_text(
+        "total_input_tokens: 3456\ntotal_output_tokens: 2531\n"
+        "total_estimated_cost_usd: 0.16111\ncalls: 2\nprices_as_of: '2026-07-16'\n"
+    )
+    t = mw.collect_tasks(
+        tmp_path, datetime.date(2026, 7, 12), datetime.date(2026, 7, 18)
+    )
+    assert t["packages"] == 1 and t["in_flight"] == 1
+    assert t["tokens_input"] == 3456 and t["tokens_output"] == 2531
+    assert t["estimated_cost_usd"] == 0.1611  # rounded, from record-time totals
+
+
+def test_calls_int_does_not_crash(tmp_path):
+    """Regression: metering's calls-as-int counter must never be iterated."""
+    task = tmp_path / "projects/P/episodes/TASK-009"
+    task.mkdir(parents=True)
+    (task / "state.yaml").write_text(
+        "task_id: TASK-009\nstate: INTAKE\nhistory:\n"
+        "  - {at: '2026-07-17T10:00:00Z', from: NONE, to: INTAKE, evidence: e}\n"
+    )
+    (task / "usage.yaml").write_text("calls: 3\ntotal_input_tokens: 10\n")
+    t = mw.collect_tasks(
+        tmp_path, datetime.date(2026, 7, 12), datetime.date(2026, 7, 18)
+    )
+    assert t["tokens_input"] == 10 and t["estimated_cost_usd"] == 0.0
+
+
 def test_report_written_with_front_matter(tmp_path):
     root = repo(tmp_path)
     out = tmp_path / "reports"
