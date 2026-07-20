@@ -1,0 +1,17 @@
+# Gate Decision Record (v2 §8) — emitted by gate-writer (B5.2)
+gate_id: GATE-HUMAN-PR78-ecccf84d
+artifact_or_release: 'PR #78: B7.4: §87 Phase 1 declaration — Version 2.1 Minimum
+  Enforceable OS complete'
+gate_owner: HUMAN
+decision: APPROVED
+criteria_version: v2§8/v1§15 handoff rev 1
+evidence:
+- https://github.com/msomali/company/pull/78
+- https://github.com/msomali/company/pull/78#pullrequestreview-4732291674
+- merge:ecccf84de97ade994bf7a88b78af512f5639c9eb
+findings: []
+conditions: []
+expires: null
+next_owner: Human owner (**msomali**) — review + merge; then the B8.1 identity handoff.
+decided_at: '2026-07-20T05:06:32Z'
+approval_message_ref: https://github.com/msomali/company/pull/78#pullrequestreview-4732291674
