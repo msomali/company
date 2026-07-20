@@ -1,0 +1,17 @@
+# Gate Decision Record (v2 §8) — emitted by gate-writer (B5.2)
+gate_id: GATE-SAT-PR58-e5d18e4a
+artifact_or_release: 'PR #58: TASK-001 episode package — §88 dry-run evidence (accumulating)'
+gate_owner: SAT
+decision: APPROVED
+criteria_version: v2§8/v1§15 handoff rev 1
+evidence:
+- https://github.com/msomali/company/pull/58
+- https://github.com/msomali/company/pull/58#pullrequestreview-4729320370
+- https://github.com/msomali/company/pull/58#pullrequestreview-4731621241
+- merge:e5d18e4a84bff14992829aaa1b1868169fc2e761
+findings: []
+conditions: []
+expires: null
+next_owner: Human owner (required review + merge, timing at owner's discretion).
+decided_at: '2026-07-19T22:55:47Z'
+approval_message_ref: https://github.com/msomali/company/pull/58#pullrequestreview-4731621241
