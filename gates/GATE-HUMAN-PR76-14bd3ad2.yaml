@@ -1,0 +1,25 @@
+# Gate Decision Record (v2 §8) — emitted by gate-writer (B5.2)
+gate_id: GATE-HUMAN-PR76-14bd3ad2
+artifact_or_release: 'PR #76: Row 4 closed: egress allowlist applied — hardening complete'
+gate_owner: HUMAN
+decision: APPROVED
+criteria_version: v2§8/v1§15 handoff rev 1
+evidence:
+- https://github.com/msomali/company/pull/76
+- https://github.com/msomali/company/pull/76#pullrequestreview-4732193629
+- merge:14bd3ad2b0273085cc52ac4e2e32f84472074632
+findings:
+- '- **APPLIED** — DOCKER-USER iptables allowlist: DNS + established/related + HTTPS/443
+  from 172.17.0.0/16, log+drop all else (Option 2 bounded egress).'
+- '- **TESTED** — both legs: GitHub/443 reachable (HTTP 200); non-standard port 9999
+  and plaintext port 80 both dropped/timed-out.'
+- '- **PERSISTED** — iptables-persistent (netfilter-persistent.service, /etc/iptables/rules.v4),
+  survives reboot; evidence at /var/company/hardening/row4-egress-evidence.txt.'
+- '- Residual risk recorded honestly (443-to-arbitrary-host accepted → blocks reverse-shell/C2/plaintext-exfil
+  per C4; full host-IP allowlist deferred with rationale). Defensible bounded-egress
+  tradeoff, transparently stated.'
+conditions: []
+expires: null
+next_owner: Bootstrap agent (review), then owner (merge).
+decided_at: '2026-07-20T04:49:41Z'
+approval_message_ref: https://github.com/msomali/company/pull/76#pullrequestreview-4732193629
