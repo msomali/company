@@ -2,6 +2,9 @@
 artifact_id: control/registers/section-b8.1-rotation-evidence.md
 title: B8.1 — Bootstrap Identity Token Rotation Evidence
 type: register
+project: company
+owner: msomali
+version: "1.0"
 status: APPROVED
 sensitivity: internal
 created: "2026-07-20"
