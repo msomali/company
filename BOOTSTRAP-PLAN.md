@@ -27,4 +27,4 @@ Rules of execution: BA-5. Prohibitions: BA-2. One task = one branch = one PR.
 - [x] B7.2 (J) Dry run §88 checks 1–5, 7, 10–14 — evidenced in the TASK-001/TASK-002 episode; PR #58 merged 2026-07-19 (merge `e5d18e4`)
 - [x] B7.3 (H) Dry run §88 checks 6, 8, 9 — evidenced in the same episode; PR #58 merged 2026-07-19
 - [x] B7.4 (J) Phase 1 declared per §87; friction converted — `control/registers/section-87-phase-1-declaration.md` (this PR); §88 14/14; B7.4 backlog dispositioned
-- [ ] B8.1 (H) Bootstrap identity revoked; tokens rotated — post-declaration owner act (BA-6); agent activation remains a separate human act (BA-2.4)
+- [x] B8.1 (H) Bootstrap identity revoked; tokens rotated — post-declaration owner act (BA-6); agent activation remains a separate human act (BA-2.4)
