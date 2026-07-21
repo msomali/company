@@ -117,6 +117,18 @@ Paste the three legs' outputs below; then amend hardening-evidence row 9 to
 `[x]` with this SOP + date as the evidence cell (owner-voice document; owner
 edits it).
 
+## Credential coupling note — gateway token (activation era, 2026-07-21)
+
+Since the session-spawn wiring, `GATEWAY_AUTH_TOKEN` has a second destination:
+`/etc/company/dispatcher.env` as `OPENCLAW_GATEWAY_TOKEN` (SECRETS-MANIFEST).
+One secret, deliberately — no separate operator token (the runtime documents
+no multi-token mechanism; owner ruling 2026-07-21). Consequences: rotating the
+gateway token severs dispatcher spawn access AND forces a dashboard re-login
+in the same act (kill-switch-symmetric — pause already severs spawn wholesale
+by stopping the gateway). After any rotation, update
+`/etc/company/dispatcher.env` before the next one-shot, or the spawn
+pre-flight refuses on the token check.
+
 ## C7 lever — collaborator removal (optional drill, owner discretion)
 
 For suspected PAT exposure the pause path prints OWNER step 4b: remove
