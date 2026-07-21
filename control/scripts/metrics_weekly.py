@@ -19,10 +19,13 @@ zeros pretending to be measurements (§87e demands a real artifact, not a
 fiction of one).
 
 Usage:
-  metrics_weekly.py [--until YYYY-MM-DD] [--days 7] [--out DIR] [--root DIR]
+  metrics_weekly.py [--until YYYY-MM-DD] [--days 7] [--out DIR] [--root DIR] [--force]
 
 Writes <out>/METRICS-<ISOyear>-W<week>.md (artifact front matter + human
-table + machine-readable yaml block). Exit 0 on success.
+table + machine-readable yaml block). Refuses to overwrite an existing report
+for the week unless --force (which warns loudly first) — a committed weekly
+report is a signed artifact, not scratch output. Exit 0 on success; non-zero
+on a refused overwrite.
 """
 from __future__ import annotations
 
@@ -302,15 +305,41 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--days", type=int, default=7)
     ap.add_argument("--out", help="output dir (default company/metrics)")
     ap.add_argument("--root", help="repo root (testing)")
+    ap.add_argument(
+        "--force",
+        action="store_true",
+        help="overwrite an existing report for the ISO week "
+        "(default: refuse if one already exists)",
+    )
     args = ap.parse_args(argv)
     root = Path(args.root).resolve() if args.root else REPO_ROOT
 
-    metrics = build_metrics(root, args.until, args.days)
-    report = render(metrics, args.until)
     out_dir = Path(args.out) if args.out else root / "company" / "metrics"
-    out_dir.mkdir(parents=True, exist_ok=True)
     iso = args.until.isocalendar()
     out_path = out_dir / f"METRICS-{iso.year}-W{iso.week:02d}.md"
+
+    # Overwrite guard (post-§87 operational fix): a committed weekly report is a
+    # signed artifact — running twice in the same ISO week must not silently
+    # clobber it (this destroyed the W29 report during B6.3 check 11;
+    # RUNBOOK-B7.2). Refuse unless --force. A refusal writes nothing and does no
+    # work (no metrics build, no mkdir); --force is allowed but warns first.
+    existed = out_path.exists()
+    if existed and not args.force:
+        print(
+            f"metrics-weekly: REFUSING to overwrite existing {out_path} "
+            "— pass --force to regenerate",
+            file=sys.stderr,
+        )
+        return 1
+
+    metrics = build_metrics(root, args.until, args.days)
+    report = render(metrics, args.until)
+    out_dir.mkdir(parents=True, exist_ok=True)
+    if existed:  # existed and --force — a non-forced existing file already returned
+        print(
+            f"metrics-weekly: WARNING overwriting existing {out_path}",
+            file=sys.stderr,
+        )
     out_path.write_text(report, encoding="utf-8")
     print(f"metrics-weekly: wrote {out_path}")
     return 0
