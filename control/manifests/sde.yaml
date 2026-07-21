@@ -4,7 +4,7 @@ name: Senior Software Development Engineer
 agent_version: 1.1.0
 role_contract_version: v1.3
 owner: human-owner
-status: contract-only         # activation is a human act, never a generator act
+status: active         # activated by owner 2026-07-21 (BA-2.4); first live agent, one-shot only
 model_policy: reasoning-max
 prompt_bundle_version: sde-prompts-1.0.0
 session_pattern: dedicated-channel
