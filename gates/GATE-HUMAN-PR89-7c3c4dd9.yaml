@@ -1,0 +1,18 @@
+# Gate Decision Record (v2 §8) — emitted by gate-writer (B5.2)
+gate_id: GATE-HUMAN-PR89-7c3c4dd9
+artifact_or_release: 'PR #89: tests: contract-only refusal invariant pinned to a synthetic
+  manifest (activation-day fix)'
+gate_owner: HUMAN
+decision: APPROVED
+criteria_version: v2§8/v1§15 handoff rev 1
+evidence:
+- https://github.com/msomali/company/pull/89
+- https://github.com/msomali/company/pull/89#pullrequestreview-4749781864
+- merge:7c3c4dd9301e40211dc5ecb4f8bb8291c118186b
+findings: []
+conditions: []
+expires: null
+next_owner: Owner (msomali) — approval requested; I hold and do not merge (BA-2),
+  and per the authorship separation this PR waits for your explicit approval.
+decided_at: '2026-07-21T23:29:57Z'
+approval_message_ref: https://github.com/msomali/company/pull/89#pullrequestreview-4749781864
