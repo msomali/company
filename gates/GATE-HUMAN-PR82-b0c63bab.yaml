@@ -1,0 +1,17 @@
+# Gate Decision Record (v2 §8) — emitted by gate-writer (B5.2)
+gate_id: GATE-HUMAN-PR82-b0c63bab
+artifact_or_release: 'PR #82: B8.2: bootstrap-verify.sh — standing foundation verifier
+  + B2.2 N/A disposition'
+gate_owner: HUMAN
+decision: APPROVED
+criteria_version: v2§8/v1§15 handoff rev 1
+evidence:
+- https://github.com/msomali/company/pull/82
+- https://github.com/msomali/company/pull/82#pullrequestreview-4741381906
+- merge:b0c63babb72a0f3d0ad17fd87fd8b3ed5e9acfb2
+findings: []
+conditions: []
+expires: null
+next_owner: Human owner (@msomali) — review + merge. I do not merge (BA-2).
+decided_at: '2026-07-21T05:01:48Z'
+approval_message_ref: https://github.com/msomali/company/pull/82#pullrequestreview-4741381906
