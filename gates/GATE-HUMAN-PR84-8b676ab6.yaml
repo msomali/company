@@ -1,0 +1,17 @@
+# Gate Decision Record (v2 §8) — emitted by gate-writer (B5.2)
+gate_id: GATE-HUMAN-PR84-8b676ab6
+artifact_or_release: 'PR #84: metrics-weekly: overwrite guard — refuse existing weekly
+  report unless --force (post-§87 operational fix)'
+gate_owner: HUMAN
+decision: APPROVED
+criteria_version: v2§8/v1§15 handoff rev 1
+evidence:
+- https://github.com/msomali/company/pull/84
+- https://github.com/msomali/company/pull/84#pullrequestreview-4748713420
+- merge:8b676ab6cdabe4ca36321773a756470138c5ed61
+findings: []
+conditions: []
+expires: null
+next_owner: Owner (msomali) — human gate per BA-2 (bot never merges).
+decided_at: '2026-07-21T20:19:04Z'
+approval_message_ref: https://github.com/msomali/company/pull/84#pullrequestreview-4748713420
