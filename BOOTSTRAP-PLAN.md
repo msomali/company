@@ -11,7 +11,7 @@ Rules of execution: BA-5. Prohibitions: BA-2. One task = one branch = one PR.
 - [x] B1.2 (H-EXEC) Branch protection + CODEOWNERS + required checks applied — spec PR #4; Phase 1 evidence PR #5; CODEOWNERS PR #7 (ADR-B005); Phase 2 checks row closes with B1.3
 - [x] B1.3 (A) CI: frontmatter-lint, handoff-check, secret-scan implemented and green — PR #8 merged 2026-07-16; checks required+strict (B1.2 Phase 2, PR #9)
 - [x] B2.1 (A) LiteLLM compose/config authored (dormant Mode P fallback; secret names only) — PR #10 merged 2026-07-16 (tick restored by L-001 audit; original tick claimed in 67ad1502 but never landed)
-- [ ] B2.2 (H-EXEC) CONDITIONAL — only on Mode P reactivation ADR; else mark N/A-dormant at §87
+- [ ] B2.2 (H-EXEC) N/A (Mode P dormant, dispositioned N/A-dormant at §87) — CONDITIONAL, only on a Mode P reactivation ADR; Mode S active per ADR-B003. Ref: control/registers/section-87-phase-1-declaration.md
 - [x] B3.1 (A) Manifest generator + tests — PR #11 merged 2026-07-16 (tick restored by L-001 audit; original tick claimed in 67ad1502 but never landed)
 - [x] B3.2 (A) 13 manifests authored; agent files generated (NOT activated) — PR #12 merged 2026-07-16
 - [x] B4.1 (A) task-create + schemas/task.json + rejection tests — PR #13 merged 2026-07-16
