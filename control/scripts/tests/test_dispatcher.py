@@ -150,9 +150,19 @@ def test_blocked_resumes_only_to_preblock_state(world):
 # -------------------------------------------------------------------- dispatch
 
 def test_dispatch_refused_while_contract_only(world):
-    """BA-2.4: manifests are contract-only during bootstrap; the dispatcher
-    must refuse to spawn."""
+    """BA-2.4 invariant, redefined on activation day (owner ruling
+    2026-07-21): a contract-only manifest is ALWAYS refused. Asserted
+    against a SYNTHETIC contract-only manifest pinned inside this world —
+    deliberately decoupled from live repo state, which flips role-by-role
+    as the owner activates agents (the previous form seeded the live
+    sde.yaml and broke the moment SDE activated; it would have broken
+    again at every future activation)."""
     root, d, task_id = world
+    (root / "control/manifests/sde.yaml").write_text(yaml.safe_dump({
+        "agent_id": "SDE",
+        "name": "Synthetic SDE (invariant fixture)",
+        "status": "contract-only",   # pinned: the invariant under test
+    }))
     with pytest.raises(dp.DispatchError) as exc:
         d.dispatch("PROJECT-000", task_id)
     assert "not 'active'" in str(exc.value)
