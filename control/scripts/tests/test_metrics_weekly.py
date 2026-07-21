@@ -182,6 +182,51 @@ def test_report_written_with_front_matter(tmp_path):
     assert metrics["git"]["merge_count"] == 1
 
 
+def test_overwrite_refused_without_force_and_writes_nothing(tmp_path, capsys):
+    """The load-bearing property: an existing weekly report + no --force must
+    refuse with non-zero exit and leave the file byte-for-byte unchanged (a
+    silent clobber destroyed the real W29 report during B6.3 check 11;
+    RUNBOOK-B7.2)."""
+    root = repo(tmp_path)
+    out = tmp_path / "reports"
+    out.mkdir()
+    target = out / "METRICS-2026-W29.md"
+    original = b"SIGNED ARTIFACT \xe2\x80\x94 committed W29 report, not scratch\n"
+    target.write_bytes(original)
+    rc = mw.main(["--until", "2026-07-17", "--root", str(root), "--out", str(out)])
+    assert rc != 0
+    assert target.read_bytes() == original  # refuse writes NOTHING
+    err = capsys.readouterr().err
+    assert "REFUSING to overwrite existing" in err
+    assert str(target) in err
+    assert "--force" in err
+
+
+def test_overwrite_with_force_warns_and_overwrites(tmp_path, capsys):
+    root = repo(tmp_path)
+    out = tmp_path / "reports"
+    out.mkdir()
+    target = out / "METRICS-2026-W29.md"
+    target.write_text("stale report\n")
+    rc = mw.main(
+        ["--until", "2026-07-17", "--root", str(root), "--out", str(out), "--force"]
+    )
+    assert rc == 0
+    assert target.read_text().startswith("---\nartifact_id: METRICS-2026-W29")
+    err = capsys.readouterr().err
+    assert "WARNING overwriting existing" in err
+    assert str(target) in err
+
+
+def test_fresh_path_writes_without_warning(tmp_path, capsys):
+    root = repo(tmp_path)
+    out = tmp_path / "reports"
+    assert mw.main(["--until", "2026-07-17", "--root", str(root), "--out", str(out)]) == 0
+    assert (out / "METRICS-2026-W29.md").is_file()
+    err = capsys.readouterr().err
+    assert "REFUSING" not in err and "WARNING" not in err
+
+
 def test_no_data_sections_say_so(tmp_path):
     root = repo(tmp_path)
     out = tmp_path / "reports"
