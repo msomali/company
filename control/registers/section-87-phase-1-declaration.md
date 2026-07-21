@@ -118,6 +118,12 @@ and the check-14 evidence) is dispositioned below. **No item is a pre-§87 block
 - 3 — extend `claimed_role()` to scan issue comments so check-5/check-7 compose.
 - 8 — per-agent token attribution on `record_usage`.
 - 15 — gate-writer replay `--force-with-lease` on an existing gate branch.
+- (added 2026-07-21, session-spawn PR) — **cross-process dispatch slot
+  registry**: file-locked active-slot accounting shared by one-shots and the
+  daemon, so `mode_s.concurrency_cap` binds across processes. Deferred by
+  owner answer 3 (2026-07-21): activation day is one-shot-only, single
+  operator — in-process `SessionPool` suffices until the multi-agent era.
+  Same bucket as item 8 (TODO reference in `session_backend.py`).
 
 **Procedure note (recorded, no code change):**
 - 5 — a release PR must not be zero-delta vs `main`; cut `release` one commit

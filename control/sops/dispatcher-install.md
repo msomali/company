@@ -147,3 +147,119 @@ Deploy-key rider executed per PR #17 review: key "dispatcher@company-vm" registe
 Identity verification: ssh -T as dispatcher greets "Hi msomali/company!" — deploy-key scoped identity confirmed, 2026-07-17.
 
 Attested by: msomali, 2026-07-17
+
+## Addendum — session-spawn activation pre-flight (activation item 1, 2026-07-21)
+
+The dispatcher spawns real agent turns via the `openclaw` CLI against the
+loopback gateway (`control/scripts/session_backend.py`; one spawn = one agent
+turn, `openclaw agent --json`). Model credentials never leave the gateway
+user (Mode S, ADR-B003) — the dispatcher carries ONLY the gateway connection
+token. Everything below is OWNER-executed on activation day, in order,
+BEFORE the first one-shot.
+
+### PREREQUISITE 1 — system-wide openclaw CLI (hard requirement)
+
+The systemd unit runs `ProtectHome=yes`, and the `dispatcher` user gets **no
+traverse rights into `/home/mr-robot`** — the home boundary stays intact
+(owner ruling 2026-07-21; do NOT solve this with permissions). The CLI must
+resolve from a system path:
+
+```bash
+npm install -g --prefix /usr/local openclaw
+```
+
+Resolution after install: the daemon resolves `/usr/local/bin/openclaw` via
+the systemd default PATH; interactive `sudo -u dispatcher` shells resolve the
+same binary. Nothing under `/home` is read by either path.
+
+Verify (paste with pre-flight evidence — the one-shot is NOT run until this
+passes):
+
+```bash
+sudo -u dispatcher which openclaw     # expect: /usr/local/bin/openclaw
+sudo -u dispatcher openclaw --version # version prints, no error
+```
+
+### PREREQUISITE 2 — gateway token in the env file
+
+Append to `/etc/company/dispatcher.env` (root:dispatcher 640; names in
+SECRETS-MANIFEST — same secret as gateway auth, second destination):
+
+```
+OPENCLAW_GATEWAY_TOKEN=<gateway token value>
+# optional — defaults to ws://127.0.0.1:18789 in session_backend.py
+# OPENCLAW_GATEWAY_URL=ws://127.0.0.1:18789
+```
+
+Coupling (deliberate, owner ruling 2026-07-21): rotating the gateway token
+severs dispatcher spawn access and dashboard login together — see the
+killswitch-drill SOP note. Spawn pre-flight refuses when the variable is
+absent; nothing is spawned on a refusal.
+
+### PREREQUISITE 3 — the 13 role agents in gateway config
+
+```bash
+python3 control/scripts/agents_config_gen.py          # stdout, or --out FILE
+```
+
+Merge the emitted `agents.list` into `~/.openclaw/openclaw.json` (host
+config is outside the repo — owner act). The header carries provenance
+(source policies.yaml commit + date + DO-NOT-HAND-EDIT): host config has no
+CI lint, so **regenerate after any policies.yaml change; never hand-edit the
+applied block**. Each agent's `workspace` must contain that role's AGENTS.md
+from `control/manifests/_generated/<ROLE>/` (paths adjustable; ids are not —
+the dispatcher spawns `agent_id = role.lower()`). Fallbacks are explicit per
+entry: `agents.list[].model` without `fallbacks` is STRICT (no fallback at
+all — docs concepts/model-failover); the explicit pair is what makes a
+rate-limited primary fail over inside the runtime per MODEL-002.
+
+### PREREQUISITE 4 — first-connect device pairing
+
+The dispatcher's first CLI connect may raise a one-time device-pairing
+approval (gateway clients doc). Approve it (dashboard or `openclaw pairing`)
+before the first one-shot, or the one-shot stalls on it.
+
+### First live spawn — one-shot only; the daemon stays scan-only
+
+`--daemon` NEVER dispatches: it constructs no session backend, by code. The
+only spawning entrypoint is the owner-invoked one-shot:
+
+```bash
+# dry-run (default): prints role/model policy/caps/prompt hash/argv plus
+# WOULD-REFUSE reasons; spawns nothing; exit 2 if anything would refuse
+sudo -u dispatcher bash -c 'set -a; . /etc/company/dispatcher.env; set +a; \
+  /srv/company/venv/bin/python control/scripts/dispatcher_runtime.py \
+  --dispatch-once --project PROJECT-000 --task TASK-00X'
+
+# live — same command + --live, human watching
+```
+
+Interlocks that must ALL hold before `--live` spawns: role manifest
+`status: active` (owner flip, separate PR — BA-2.4), token present,
+separation of duties, task not BLOCKED, concurrency slot free. Every refusal
+is loud and spawns nothing.
+
+### Live-observation list — first one-shot (observe, do not assume)
+
+Owner requirement B (2026-07-21): run the first live one-shot under
+deliberately tight caps (small `wall_clock_minutes` in the envelope) and
+record:
+
+1. **`--timeout` semantics under fallback:** total wall-time vs per-attempt
+   across OpenClaw's up-to-10× overload retries and the model-fallback chain
+   (docs state the retry loop, not its interaction with the CLI deadline).
+   Compare actual wall time against the passed `--timeout`.
+2. **Fallback visibility on a headless turn:** where the "↪️ Model
+   Fallback" notice lands and whether `--json` meta reflects the
+   fallback-vs-selected model.
+3. **`in_flight` dedup:** a second one-shot against the same session key
+   while a turn runs must surface `status: in_flight` (backend raises; no
+   double spawn).
+4. **Pairing friction:** whether PREREQUISITE 4 actually triggered, and
+   where the approval surfaced.
+
+Paste observations under Evidence below; they close requirement B.
+
+## Evidence — session-spawn pre-flight + first one-shot (owner paste + date)
+
+_(pending activation day)_

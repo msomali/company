@@ -131,3 +131,115 @@ def test_process_review_no_decisions_is_noop(world, capsys, monkeypatch):
                     "--reference", "PR#test"])
     assert code == 0
     assert "no inference" in capsys.readouterr().out
+
+
+# -- dispatch-once (activation item 1, 2026-07-21) ---------------------------
+
+
+class FakeSpawnBackend:
+    """Test double for the one-shot path; mirrors OpenClawSessionBackend's
+    constructor surface and spawn contract."""
+
+    def __init__(self, policies_path=None, timeout_seconds=None):
+        self.policies_path = policies_path
+        self.timeout_seconds = timeout_seconds
+        self.spawned = []
+        self.last_response = {"meta": {"durationMs": 42}}
+
+    def spawn(self, agent_id, prompt):
+        self.spawned.append((agent_id, prompt))
+        return f"agent:{agent_id}:fake-run"
+
+
+def _activate_sde(root):
+    (root / "control/manifests").mkdir(parents=True, exist_ok=True)
+    (root / "control/manifests/sde.yaml").write_text(
+        yaml.safe_dump({"role": "SDE", "status": "active"}))
+
+
+def test_dispatch_once_dry_run_refuses_loudly_and_spawns_nothing(
+        world, capsys, monkeypatch):
+    root, task_id = world
+    monkeypatch.delenv("OPENCLAW_GATEWAY_TOKEN", raising=False)
+
+    def exploding_factory(**kw):
+        raise AssertionError("dry-run must never construct a backend")
+
+    code = rt.dispatch_once(root, "PROJECT-000", task_id, live=False,
+                            backend_factory=exploding_factory)
+    assert code == 2
+    out = capsys.readouterr().out
+    assert "WOULD REFUSE" in out
+    assert "no manifest for role SDE" in out
+    assert "OPENCLAW_GATEWAY_TOKEN missing" in out
+    assert "nothing spawned" in out
+    state = yaml.safe_load(
+        (root / f"projects/PROJECT-000/episodes/{task_id}/state.yaml").read_text())
+    assert state["run_id"] is None  # dry-run is read-only
+
+
+def test_dispatch_once_dry_run_clean_exits_zero(world, capsys, monkeypatch):
+    root, task_id = world
+    _activate_sde(root)
+    monkeypatch.setenv("OPENCLAW_GATEWAY_TOKEN", "t0k")
+    code = rt.dispatch_once(root, "PROJECT-000", task_id, live=False)
+    assert code == 0
+    out = capsys.readouterr().out
+    assert "WOULD REFUSE" not in out
+    assert "--timeout: 1800s" in out          # 30-min envelope budget → seconds
+    assert "token present: yes" in out
+    assert "t0k" not in out                   # value never printed
+    assert "--session-key agent:sde:" in out
+
+
+def test_dispatch_once_live_spawns_records_and_reports(
+        world, capsys, monkeypatch):
+    root, task_id = world
+    _activate_sde(root)
+    monkeypatch.setenv("OPENCLAW_GATEWAY_TOKEN", "t0k")
+
+    class NullCommitter:
+        def commit(self, paths, message):
+            pass
+
+    import dispatcher as dp
+    monkeypatch.setattr(dp, "GitCommitter", lambda root_: NullCommitter())
+    made = []
+
+    def factory(**kw):
+        b = FakeSpawnBackend(**kw)
+        made.append(b)
+        return b
+
+    code = rt.dispatch_once(root, "PROJECT-000", task_id, live=True,
+                            backend_factory=factory)
+    assert code == 0
+    assert made[0].timeout_seconds == 1800
+    agent_id, prompt = made[0].spawned[0]
+    assert agent_id == "sde"
+    assert "Task envelope" in prompt
+    out = capsys.readouterr().out
+    assert "spawned agent:sde:fake-run" in out
+    state = yaml.safe_load(
+        (root / f"projects/PROJECT-000/episodes/{task_id}/state.yaml").read_text())
+    assert state["run_id"] == "agent:sde:fake-run"
+
+
+def test_dispatch_once_live_refused_without_manifest_never_builds_backend(
+        world, capsys, monkeypatch):
+    root, task_id = world
+    monkeypatch.setenv("OPENCLAW_GATEWAY_TOKEN", "t0k")
+
+    def exploding_factory(**kw):
+        raise AssertionError("refused live run must never construct a backend")
+
+    code = rt.dispatch_once(root, "PROJECT-000", task_id, live=True,
+                            backend_factory=exploding_factory)
+    assert code == 1
+    assert "REFUSED" in capsys.readouterr().out
+
+
+def test_dispatch_once_cli_requires_project_and_task(world):
+    root, _ = world
+    with pytest.raises(SystemExit):
+        rt.main(["--dispatch-once", "--repo-root", str(root)])
