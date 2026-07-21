@@ -1,0 +1,16 @@
+# Gate Decision Record (v2 §8) — emitted by gate-writer (B5.2)
+gate_id: GATE-HUMAN-PR88-edd2c854
+artifact_or_release: 'PR #88: Activate SDE (BA-2.4) — first agent, one-shot only'
+gate_owner: HUMAN
+decision: APPROVED
+criteria_version: v2§8/v1§15 handoff rev 1
+evidence:
+- https://github.com/msomali/company/pull/88
+- https://github.com/msomali/company/pull/88#pullrequestreview-4749824741
+- merge:edd2c854ad04d03401305b2096e4979c7fdf89b8
+findings: []
+conditions: []
+expires: null
+next_owner: Bootstrap agent (review), then owner (merge + one-shot).
+decided_at: '2026-07-21T23:42:40Z'
+approval_message_ref: https://github.com/msomali/company/pull/88#pullrequestreview-4749824741
