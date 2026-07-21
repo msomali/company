@@ -1,0 +1,18 @@
+# Gate Decision Record (v2 §8) — emitted by gate-writer (B5.2)
+gate_id: GATE-HUMAN-PR86-84ad75c3
+artifact_or_release: 'PR #86: session-spawn: real OpenClaw backend + owner one-shot
+  dispatch (activation item 1)'
+gate_owner: HUMAN
+decision: APPROVED
+criteria_version: v2§8/v1§15 handoff rev 1
+evidence:
+- https://github.com/msomali/company/pull/86
+- https://github.com/msomali/company/pull/86#pullrequestreview-4749422353
+- merge:84ad75c3ffd916e0a938b9c8c11873eb6d80c4b2
+findings: []
+conditions: []
+expires: null
+next_owner: Owner (msomali) — human gate per BA-2; all host-side acts (CLI install,
+  env file, agents.list merge, pairing approval, first live spawn) are owner-executed.
+decided_at: '2026-07-21T22:12:48Z'
+approval_message_ref: https://github.com/msomali/company/pull/86#pullrequestreview-4749422353
