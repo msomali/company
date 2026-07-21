@@ -1,0 +1,27 @@
+# Gate Decision Record (v2 §8) — emitted by gate-writer (B5.2)
+gate_id: GATE-HUMAN-PR80-80349fb9
+artifact_or_release: 'PR #80: B8.1: bootstrap token rotation — final BA-6 task'
+gate_owner: HUMAN
+decision: APPROVED
+criteria_version: v2§8/v1§15 handoff rev 1
+evidence:
+- https://github.com/msomali/company/pull/80
+- https://github.com/msomali/company/pull/80#pullrequestreview-4741119190
+- merge:80349fb9bfe64d399ed5aae2a48f584357cbc875
+findings:
+- '- **rotate-then-verify-then-revoke** — new token verified (`gh api user` → `agenticfoundrybot`;
+  scopes `repo, workflow`) BEFORE the old bootstrap token was revoked; old token held
+  live as fallback until then; post-revoke re-verify confirms nothing stranded; dispatcher
+  active throughout. The machine never lost its credential.'
+- '- **classic PAT per v2.7** — classic `repo`+`workflow`, 90-day, per §80.4 / ADR-B002
+  / §86-C7 (fine-grained structurally unavailable to a collaborator account).'
+- '- **identity retained** — `agenticfoundrybot` kept (ADR-B000); only the token rotated.
+  Dispatcher deploy key correctly left untouched (not bootstrap-stale).'
+- '- **honest process note** — the discarded first token (repo-only, missing `workflow`,
+  caught by the pre-revoke scope check; accidentally echoed then deleted + history
+  scrubbed; re-minted via `read -rs`) is recorded and was never the operative credential.'
+conditions: []
+expires: null
+next_owner: Bootstrap agent (review — done), then owner (merge).
+decided_at: '2026-07-21T04:18:02Z'
+approval_message_ref: https://github.com/msomali/company/pull/80#pullrequestreview-4741119190
