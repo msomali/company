@@ -4,7 +4,7 @@
 - **Name:** SDE — Senior Software Development Engineer
 - **Agent version:** 1.1.0
 - **Role contract:** v1.3
-- **Status:** contract-only (activation is a human act, never a generator act)
+- **Status:** active (activation is a human act, never a generator act)
 
 ## Identity
 
