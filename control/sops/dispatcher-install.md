@@ -269,6 +269,58 @@ sudo -u mr-robot -i sh -c 'stat -c "%a %U" ~/.openclaw/agents/<id>'
 # expect: 700 mr-robot — anything wider is a finding; paste with evidence
 ```
 
+### AUTH-PROVISIONING — per activated agent (added 2026-07-21, live attempt 3)
+
+**Why:** model auth is **per-agent** — each agent resolves credentials from
+its own store (`~/.openclaw/agents/<id>/agent/openclaw-agent.sqlite`), with
+documented read-through inheritance from the DEFAULT agent's store when no
+local profile exists (auth-credential-semantics; default agent =
+`default: true` entry, else `agents.list[0]`, else `main` —
+`resolveDefaultAgentId`). Live attempt 3 (2026-07-21) reached Anthropic with
+a resolved-but-rejected bearer (`authentication_error: Invalid bearer
+token`) on BOTH chain slots and failed fast — auth errors are exempt from
+the 10× overload retry by design (model-failover: the retry gate is
+overload-only; persistent auth failures skip the provider immediately).
+There is NO per-agent profile reference in `agents.list` (schema:
+`AgentConfig` has no auth field; top-level `auth.profiles` is
+metadata/routing only), and hand-copying files between agent dirs is
+unsupported (the sqlite is never hand-edited — SECRETS-MANIFEST).
+
+**Check (BEFORE any `--live` — this would have caught attempt 3):**
+
+```bash
+# auth overview as THIS agent resolves it — policy primary AND fallback
+# providers must report usable credentials (sde: anthropic both slots):
+sudo -u mr-robot -i openclaw models status --agent <id>
+
+# optional real-call probe of the policy's provider (consumes tokens):
+sudo -u mr-robot -i openclaw models status --agent <id> --probe --probe-provider anthropic
+```
+
+Auth warnings / missing-credential reasons = **STOP; no --live attempt.**
+
+**Remediation — the documented per-agent auth write** (`cli/models`:
+"Use `openclaw models auth --agent <id> <subcommand>` to write auth results
+to a specific configured agent store"; honored by `login`, `setup-token`,
+`paste-token`, `paste-api-key`, `order`). Gateway seat, per agent:
+
+```bash
+# Anthropic-family agents (reasoning-max / economy primaries) — preferred
+# when the host has a Claude CLI login (single-custody: the per-agent
+# profile stores the claude-cli route; the credential stays with the host
+# Claude login, matching Phase-0):
+sudo -u mr-robot -i openclaw models auth --agent <id> login --provider anthropic --method cli
+
+# OpenAI-family agents (standard policy — SAT is next):
+sudo -u mr-robot -i openclaw models auth --agent <id> login --provider openai
+```
+
+Then re-run the check; paste check + remediation output with pre-flight
+evidence. Custody note: per-agent token profiles (setup-token/paste-token
+paths) multiply rotation points — prefer the `--method cli` route above;
+whatever lands here must keep the SECRETS-MANIFEST Mode S note true
+(stores per-agent, created by human sign-in, never in the repo).
+
 ### PREREQUISITE 4 — first-connect device pairing
 
 The dispatcher's first CLI connect may raise a one-time device-pairing
