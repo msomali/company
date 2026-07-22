@@ -1,0 +1,18 @@
+# Gate Decision Record (v2 §8) — emitted by gate-writer (B5.2)
+gate_id: GATE-HUMAN-PR99-64cdf9ab
+artifact_or_release: 'PR #99: pr-open helper: refuse PR creation on handoff_check
+  failure (POL-005 at the source)'
+gate_owner: HUMAN
+decision: APPROVED
+criteria_version: v2§8/v1§15 handoff rev 1
+evidence:
+- https://github.com/msomali/company/pull/99
+- https://github.com/msomali/company/pull/99#pullrequestreview-4758696125
+- merge:64cdf9abe9aedc37aa8117238e8081db356a85ed
+findings: []
+conditions: []
+expires: null
+next_owner: Human owner (msomali) — review/merge. Bootstrap adopts the helper as its
+  exclusive PR-open path effective immediately (this PR is its first live use).
+decided_at: '2026-07-22T20:55:51Z'
+approval_message_ref: https://github.com/msomali/company/pull/99#pullrequestreview-4758696125
