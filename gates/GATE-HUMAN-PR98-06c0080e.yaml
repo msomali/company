@@ -1,0 +1,18 @@
+# Gate Decision Record (v2 §8) — emitted by gate-writer (B5.2)
+gate_id: GATE-HUMAN-PR98-06c0080e
+artifact_or_release: 'PR #98: SOP: correct auth read-through semantics (main-store
+  inheritance) + fleet repair procedure'
+gate_owner: HUMAN
+decision: APPROVED
+criteria_version: v2§8/v1§15 handoff rev 1
+evidence:
+- https://github.com/msomali/company/pull/98
+- https://github.com/msomali/company/pull/98#pullrequestreview-4758669538
+- merge:06c0080e671c4cc301e4ca0d20979cbca576cb7a
+findings: []
+conditions: []
+expires: null
+next_owner: Human owner (msomali) — review/merge, then owner-executed host sequence
+  per BA-5.4; bootstrap remains available for follow-up corrections.
+decided_at: '2026-07-22T20:52:50Z'
+approval_message_ref: https://github.com/msomali/company/pull/98#pullrequestreview-4758669538
