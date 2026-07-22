@@ -1,0 +1,10 @@
+task_id: TASK-003
+state: INTAKE
+run_id: agent:sde:task-003-20260722t233135z-790e74
+iteration_count: 1
+rejection_cycles: 0
+history:
+- at: '2026-07-21T23:49:42Z'
+  from: NONE
+  to: INTAKE
+  evidence: task-create from envelope-task003-live.yaml
