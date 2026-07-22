@@ -1,0 +1,17 @@
+# Gate Decision Record (v2 §8) — emitted by gate-writer (B5.2)
+gate_id: GATE-HUMAN-PR94-0b7ca5c8
+artifact_or_release: 'PR #94: SOP: per-agent store permissions check (auto-created
+  775 vs provisioned 700)'
+gate_owner: HUMAN
+decision: APPROVED
+criteria_version: v2§8/v1§15 handoff rev 1
+evidence:
+- https://github.com/msomali/company/pull/94
+- https://github.com/msomali/company/pull/94#pullrequestreview-4751308791
+- merge:0b7ca5c818c27b1c31553d9e771030910d9f56f9
+findings: []
+conditions: []
+expires: null
+next_owner: Owner (msomali) — review/merge and host execution; I hold (BA-2).
+decided_at: '2026-07-22T05:39:18Z'
+approval_message_ref: https://github.com/msomali/company/pull/94#pullrequestreview-4751308791
