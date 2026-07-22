@@ -255,6 +255,20 @@ sudo -u dispatcher bash -c 'set -a; . /etc/company/dispatcher.env; set +a; \
 sudo -u mr-robot -i openclaw agents list
 ```
 
+**Per-agent store permissions (differential confirmed 2026-07-21):** agent
+dirs under the gateway user's `~/.openclaw/agents/<id>/` that the runtime
+**auto-creates at first spawn** come up **775**; the human-provisioned
+Phase-0 store (`bootstrap`) is **700**. The dir holds that agent's auth
+store (`openclaw-agent.sqlite` — model credentials; SECRETS-MANIFEST
+Mode S note). After provisioning — or after the first spawn of any newly
+activated agent — tighten and verify on the gateway seat:
+
+```bash
+sudo -u mr-robot -i sh -c 'chmod 700 ~/.openclaw/agents/<id>'
+sudo -u mr-robot -i sh -c 'stat -c "%a %U" ~/.openclaw/agents/<id>'
+# expect: 700 mr-robot — anything wider is a finding; paste with evidence
+```
+
 ### PREREQUISITE 4 — first-connect device pairing
 
 The dispatcher's first CLI connect may raise a one-time device-pairing
