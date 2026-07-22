@@ -1,0 +1,17 @@
+# Gate Decision Record (v2 §8) — emitted by gate-writer (B5.2)
+gate_id: GATE-HUMAN-PR96-5263237a
+artifact_or_release: 'PR #96: SOP: AUTH-PROVISIONING prerequisite per activated agent
+  (attempt-3 auth failure)'
+gate_owner: HUMAN
+decision: APPROVED
+criteria_version: v2§8/v1§15 handoff rev 1
+evidence:
+- https://github.com/msomali/company/pull/96
+- https://github.com/msomali/company/pull/96#pullrequestreview-4757450638
+- merge:5263237a8c13e9805e93b94f8ac68fe964d3061b
+findings: []
+conditions: []
+expires: null
+next_owner: Owner (msomali) — review/merge and all host execution; I hold (BA-2).
+decided_at: '2026-07-22T18:21:35Z'
+approval_message_ref: https://github.com/msomali/company/pull/96#pullrequestreview-4757450638
