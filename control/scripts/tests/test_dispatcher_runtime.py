@@ -182,6 +182,7 @@ def test_dispatch_once_dry_run_clean_exits_zero(world, capsys, monkeypatch):
     root, task_id = world
     _activate_sde(root)
     monkeypatch.setenv("OPENCLAW_GATEWAY_TOKEN", "t0k")
+    monkeypatch.setenv("OPENCLAW_CONFIG_PATH", "/etc/company/openclaw-dispatcher.json")
     code = rt.dispatch_once(root, "PROJECT-000", task_id, live=False)
     assert code == 0
     out = capsys.readouterr().out
@@ -190,6 +191,22 @@ def test_dispatch_once_dry_run_clean_exits_zero(world, capsys, monkeypatch):
     assert "token present: yes" in out
     assert "t0k" not in out                   # value never printed
     assert "--session-key agent:sde:" in out
+    # seat-config surfacing (first-live-spawn failure 2026-07-21): the CLI
+    # resolves --agent from the INVOKING user's config — the dry-run must
+    # show which config the seat would use
+    assert "OPENCLAW_CONFIG_PATH=/etc/company/openclaw-dispatcher.json" in out
+
+
+def test_dispatch_once_dry_run_warns_when_seat_config_unset(
+        world, capsys, monkeypatch):
+    root, task_id = world
+    _activate_sde(root)
+    monkeypatch.setenv("OPENCLAW_GATEWAY_TOKEN", "t0k")
+    monkeypatch.delenv("OPENCLAW_CONFIG_PATH", raising=False)
+    rt.dispatch_once(root, "PROJECT-000", task_id, live=False)
+    out = capsys.readouterr().out
+    assert "OPENCLAW_CONFIG_PATH=(unset" in out
+    assert "seat-check" in out
 
 
 def test_dispatch_once_live_spawns_records_and_reports(

@@ -187,6 +187,8 @@ SECRETS-MANIFEST — same secret as gateway auth, second destination):
 
 ```
 OPENCLAW_GATEWAY_TOKEN=<gateway token value>
+# seat config — REQUIRED for agent-id resolution (see PREREQUISITE 3):
+OPENCLAW_CONFIG_PATH=/etc/company/openclaw-dispatcher.json
 # optional — defaults to ws://127.0.0.1:18789 in session_backend.py
 # OPENCLAW_GATEWAY_URL=ws://127.0.0.1:18789
 ```
@@ -196,22 +198,62 @@ severs dispatcher spawn access and dashboard login together — see the
 killswitch-drill SOP note. Spawn pre-flight refuses when the variable is
 absent; nothing is spawned on a refusal.
 
-### PREREQUISITE 3 — the 13 role agents in gateway config
+### PREREQUISITE 3 — the 13 role agents, applied to BOTH seats
+
+**Why two seats (corrected 2026-07-21 after the first live-spawn failure):**
+the `openclaw` CLI validates `--agent` against the **invoking user's own
+config** before it ever contacts the gateway
+(`src/commands/agent-via-gateway.ts`: unknown ids throw
+`Unknown agent id "…"` client-side). The dispatcher's fresh default config
+knew only `main`, so both live one-shots refused while the dry-run (no
+gateway contact) stayed green. "Configured in gateway agents.list" is
+necessary but NOT sufficient: the gateway seat executes; the dispatcher
+seat resolves.
+
+Generate ONE artifact, apply it twice:
 
 ```bash
-python3 control/scripts/agents_config_gen.py          # stdout, or --out FILE
+python3 control/scripts/agents_config_gen.py --out /tmp/company-agents.json5
+
+# Seat 1 — gateway (execution): merge agents.list into the gateway user's
+# ~/.openclaw/openclaw.json (workspaces, models, containment; validate
+# config, restart gateway — your standing pre-restart validator step).
+
+# Seat 2 — dispatcher (id resolution): install the SAME file VERBATIM — it
+# is a complete, valid JSON5 config document — then point the CLI at it
+# via OPENCLAW_CONFIG_PATH (PREREQUISITE 2 env block):
+install -o root -g dispatcher -m 640 /tmp/company-agents.json5 \
+  /etc/company/openclaw-dispatcher.json
 ```
 
-Merge the emitted `agents.list` into `~/.openclaw/openclaw.json` (host
-config is outside the repo — owner act). The header carries provenance
-(source policies.yaml commit + date + DO-NOT-HAND-EDIT): host config has no
-CI lint, so **regenerate after any policies.yaml change; never hand-edit the
-applied block**. Each agent's `workspace` must contain that role's AGENTS.md
-from `control/manifests/_generated/<ROLE>/` (paths adjustable; ids are not —
-the dispatcher spawns `agent_id = role.lower()`). Fallbacks are explicit per
-entry: `agents.list[].model` without `fallbacks` is STRICT (no fallback at
-all — docs concepts/model-failover); the explicit pair is what makes a
-rate-limited primary fail over inside the runtime per MODEL-002.
+On the dispatcher seat the `workspace`/`model` fields are inert — only the
+ids resolve; execution state stays with the gateway. No traverse into
+`/home/mr-robot` is needed or permitted (standing ruling); device/pairing
+state still lives in the dispatcher's own `~/.openclaw` (`/srv/company`).
+
+The header carries provenance (source policies.yaml commit + date +
+DO-NOT-HAND-EDIT): host config has no CI lint, so **regenerate after any
+policies.yaml change and re-apply to BOTH seats; never hand-edit either
+applied copy**. Each agent's gateway-side `workspace` must contain that
+role's AGENTS.md from `control/manifests/_generated/<ROLE>/` (paths
+adjustable; ids are not — the dispatcher spawns `agent_id = role.lower()`).
+Fallbacks are explicit per entry: `agents.list[].model` without `fallbacks`
+is STRICT (no fallback at all — docs concepts/model-failover); the explicit
+pair is what makes a rate-limited primary fail over inside the runtime per
+MODEL-002.
+
+**Seat-check (verify BOTH, paste with pre-flight evidence — this check
+would have caught the 2026-07-21 failure before any live attempt):**
+
+```bash
+# dispatcher seat — must list sde (and the other 12 ids),
+# NOT just "main (default)":
+sudo -u dispatcher bash -c 'set -a; . /etc/company/dispatcher.env; set +a; \
+  openclaw agents list'
+
+# gateway seat — same ids visible to the gateway user:
+sudo -u mr-robot -i openclaw agents list
+```
 
 ### PREREQUISITE 4 — first-connect device pairing
 

@@ -15,8 +15,19 @@ The whole point of the generated chain is that a rate-limited primary fails
 over inside the runtime, per policy pairs already evaluated under MODEL-002.
 
 Output is JSON5 (openclaw.json is JSON5 — comments are legal), to stdout or
-``--out``. Applying it to ``~/.openclaw/openclaw.json`` is the OWNER's act on
-activation day (control/sops/dispatcher-install.md addendum).
+``--out``. ONE artifact, applied to TWO seats (owner act, activation day;
+control/sops/dispatcher-install.md addendum):
+
+1. **Gateway seat (execution):** merged into the gateway user's
+   ``~/.openclaw/openclaw.json`` — workspaces, models, containment.
+2. **Dispatcher seat (id resolution):** installed VERBATIM as
+   ``/etc/company/openclaw-dispatcher.json`` with
+   ``OPENCLAW_CONFIG_PATH`` pointing at it. The CLI validates ``--agent``
+   against the INVOKING USER's config before contacting the gateway
+   (agent-via-gateway.ts — proven by the 2026-07-21 first-live-spawn
+   failure: the dispatcher's fresh default config knew only ``main``, so
+   every spawn refused with "Unknown agent id"). Client-side, workspace
+   paths are inert — only the ids resolve.
 """
 from __future__ import annotations
 
@@ -74,8 +85,12 @@ def generate(policies_path: Path, commit: str, today: str) -> str:
         "header is the only drift defense.\n"
         f"// source: control/models/policies.yaml @ {commit}\n"
         f"// generated: {today} by control/scripts/agents_config_gen.py\n"
-        "// apply: merge agents.list into ~/.openclaw/openclaw.json "
-        "(owner act, activation day; dispatcher-install.md addendum).\n"
+        "// apply TWICE (dispatcher-install.md addendum): (1) merge "
+        "agents.list into the gateway user's ~/.openclaw/openclaw.json "
+        "(execution seat); (2) install this file VERBATIM as "
+        "/etc/company/openclaw-dispatcher.json + OPENCLAW_CONFIG_PATH in "
+        "dispatcher.env (dispatcher seat — the CLI resolves --agent ids "
+        "from the invoking user's config, not the gateway's).\n"
         "// workspace: each dir must contain that role's AGENTS.md from "
         "control/manifests/_generated/<ROLE>/ (paths adjustable; ids are "
         "not — spawn(agent_id=role.lower())).\n"

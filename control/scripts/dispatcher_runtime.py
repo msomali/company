@@ -157,8 +157,11 @@ def dispatch_once(repo_root: Path, project: str, task: str, live: bool,
     print(f"dispatch-once ({mode_word}) {project}/{task}")
     print(f"  role: {role} (manifest status: {manifest_status})  agent id: {role.lower()}")
     print(f"  model policy: {policy_name} primary={pol.get('primary')} "
-          f"fallback={pol.get('fallback')} (configured in gateway agents.list; "
+          f"fallback={pol.get('fallback')} (gateway agents.list = execution; "
           "backend passes no --model)")
+    seat_cfg = os.environ.get("OPENCLAW_CONFIG_PATH")
+    print(f"  seat config: OPENCLAW_CONFIG_PATH="
+          f"{seat_cfg or '(unset — CLI resolves --agent from ~/.openclaw/openclaw.json of THIS user; see SOP seat-check)'}")
     print(f"  tier: {envelope['tier']}  wall cap: {wall_cap} min  "
           f"tool cap: {tool_cap}  --timeout: {timeout_s}s")
     print(f"  prompt: sha256:{sha}  bytes={len(prompt.encode('utf-8'))}")

@@ -23,6 +23,13 @@ Mechanism (owner-approved proposal, 2026-07-21):
   rotation inside the provider, then turn-local model fallback down the
   configured chain (docs concepts/model-failover). MODEL-001/002 hold by
   construction of policies.yaml.
+* Agent-id resolution is SEAT-side, not gateway-side: the CLI validates
+  ``--agent`` against the invoking user's config before connecting
+  (agent-via-gateway.ts; first-live-spawn failure 2026-07-21). The
+  dispatcher seat therefore carries ``OPENCLAW_CONFIG_PATH=
+  /etc/company/openclaw-dispatcher.json`` — the same generated artifact,
+  installed verbatim — in dispatcher.env. This backend passes the env
+  through untouched; the SOP seat-check verifies resolution pre-live.
 * Custody: model credentials never leave the gateway user (Mode S,
   ADR-B003). This process carries only ``OPENCLAW_GATEWAY_TOKEN``
   (+ optional ``OPENCLAW_GATEWAY_URL``), provided by
