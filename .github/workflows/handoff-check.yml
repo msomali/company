@@ -12,5 +12,5 @@ jobs:
       - name: all ten handoff sections non-empty in PR body
         run: python control/scripts/handoff_check.py
       - name: unit tests
-        run: pip install pytest && python -m pytest control/scripts/tests/test_handoff_check.py -q
+        run: pip install pytest && python -m pytest control/scripts/tests/test_handoff_check.py control/scripts/tests/test_pr_open.py -q
         env: {PYTHONPATH: control/scripts}
