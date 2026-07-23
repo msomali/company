@@ -1,0 +1,18 @@
+# Gate Decision Record (v2 §8) — emitted by gate-writer (B5.2)
+gate_id: GATE-HUMAN-PR113-8c7e2f7a
+artifact_or_release: 'PR #113: harvest: episodic refusal on unreadable inputs + mechanical
+  front-matter stamp (findings 3/6)'
+gate_owner: HUMAN
+decision: APPROVED
+criteria_version: v2§8/v1§15 handoff rev 1
+evidence:
+- https://github.com/msomali/company/pull/113
+- https://github.com/msomali/company/pull/113#pullrequestreview-4768746860
+- https://github.com/msomali/company/pull/113#pullrequestreview-4768752396
+- merge:8c7e2f7aa6f0f527767582c0e461d875383642a0
+findings: []
+conditions: []
+expires: null
+next_owner: Human owner (@msomali) — review and merge decision.
+decided_at: '2026-07-23T22:41:29Z'
+approval_message_ref: https://github.com/msomali/company/pull/113#pullrequestreview-4768752396

@@ -55,6 +55,7 @@ import hashlib
 import os
 import sys
 import time
+import traceback
 from pathlib import Path
 
 import yaml
@@ -318,6 +319,7 @@ def harvest_once(repo_root: Path, project: str, task: str, workspace,
             role=role,
             required_outputs=list(envelope.get("required_outputs") or []),
             slug=slug,
+            data_classification=envelope.get("data_classification"),
             harvester=harvester,
         )
     except hv.HarvestRefused as exc:
@@ -333,6 +335,20 @@ def harvest_once(repo_root: Path, project: str, task: str, workspace,
         d.committer.commit(
             [log_path], f"{task}: harvest ERROR — episodic record")
         print(f"harvest-once: FAILED: {exc}")
+        return 1
+    except Exception as exc:  # noqa: BLE001 — req-1 backstop (finding 3):
+        # even an UNFORESEEN defect leaves an episodic record. The live
+        # 2026-07-23 perms crash proved a raw traceback alone violates
+        # ADR-B006 binding requirement 1 (no refusal event, silent episode).
+        log_path = d.log(task_dir, "harvest_error",
+                         reason=f"unhandled {exc.__class__.__name__}: {exc}")
+        d.committer.commit(
+            [log_path],
+            f"{task}: harvest ERROR (unhandled defect) — episodic record",
+        )
+        print(f"harvest-once: FAILED (unhandled defect): "
+              f"{exc.__class__.__name__}: {exc}")
+        traceback.print_exc()
         return 1
     log_path = d.log(task_dir, "harvest_pushed", branch=result["branch"],
                      sha=result["sha"], files=result["files"])

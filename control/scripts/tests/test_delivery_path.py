@@ -158,3 +158,46 @@ def test_harvest_once_unknown_task_refuses(tmp_path, capsys):
     rc = rt.harvest_once(tmp_path, "PROJECT-000", "TASK-404", ws, dispatcher=d)
     assert rc == 2
     assert "no such task" in capsys.readouterr().out
+
+
+def test_harvest_once_unhandled_defect_still_episodic(tmp_path, monkeypatch,
+                                                      capsys):
+    """Finding 3 (2026-07-23): the live perms crash produced a raw traceback
+    and NO episodic event. Even a defect harvest.py never anticipated must
+    leave a committed harvest_error record (ADR-B006 binding req 1)."""
+    td = make_task(tmp_path, ["src/mod.py"])
+    ws = make_ws(tmp_path, {"src/mod.py": "x\n", "handoff.md": valid_handoff()})
+    d, committer = harvest_dispatcher(tmp_path)
+
+    def boom(**kwargs):
+        raise ValueError("wholly unforeseen defect")
+
+    monkeypatch.setattr(rt.hv, "run_harvest", boom)
+    rc = rt.harvest_once(tmp_path, "PROJECT-000", "TASK-9", ws, dispatcher=d)
+    assert rc == 1
+    events = read_events(td)
+    err = next(e for e in events if e["event"] == "harvest_error")
+    assert "unhandled ValueError" in err["reason"]
+    assert committer.commits and "unhandled" in committer.commits[-1][1]
+    assert "FAILED (unhandled defect)" in capsys.readouterr().out
+
+
+def test_harvest_once_passes_envelope_data_classification(tmp_path,
+                                                          monkeypatch):
+    """The stamp's sensitivity field comes from the envelope (finding 6)."""
+    td = make_task(tmp_path, ["src/mod.py"])
+    task = yaml.safe_load((td / "task.yaml").read_text())
+    task["data_classification"] = "confidential"
+    (td / "task.yaml").write_text(yaml.safe_dump(task))
+    ws = make_ws(tmp_path, {"src/mod.py": "x\n", "handoff.md": valid_handoff()})
+    d, _ = harvest_dispatcher(tmp_path)
+    seen = {}
+
+    def spy_run_harvest(**kwargs):
+        seen.update(kwargs)
+        return {"branch": "sde/TASK-9", "sha": "f" * 40, "files": []}
+
+    monkeypatch.setattr(rt.hv, "run_harvest", spy_run_harvest)
+    assert rt.harvest_once(tmp_path, "PROJECT-000", "TASK-9", ws,
+                           dispatcher=d) == 0
+    assert seen["data_classification"] == "confidential"
