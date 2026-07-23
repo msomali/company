@@ -702,10 +702,13 @@ sudo -u dispatcher git -C /srv/company/repo push origin dispatch/TASK-00N
 # owner reviews/merges. Then: Code vintage rule 1 — clone back to main.
 ```
 
-Gate-edge discipline: `--transition` CAN legally walk review states
-(Appendix A edges) but MUST NOT — review edges belong to `--process-review`
-so every gate decision leaves its immutable record. Walking a review edge
-with `--transition` is an audit finding.
+Gate-edge discipline (owner ruling 2026-07-23, structural): `--transition`
+REFUSES any exit from a gate-owned state — approve and reject targets
+alike — naming the owning gate and `--process-review` as the correct path;
+only `--to BLOCKED` (escalation) passes. Gate records are unskippable by
+construction on the runtime CLI, not by procedure. If a legitimate
+non-gate exit from one of those states ever emerges, that is an approvals-
+model change (ADR), not a flag.
 
 ### Deliverable verification — in the agent's sandbox (owner finding 4b)
 
