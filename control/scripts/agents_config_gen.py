@@ -74,7 +74,7 @@ def generate(policies_path: Path, commit: str, today: str) -> str:
             )
         entries.append({
             "id": code.lower(),
-            "workspace": f"~/company-agents/{code.lower()}",
+            "workspace": f"/srv/company-agents/{code.lower()}",
             "model": {
                 "primary": pol["primary"],
                 "fallbacks": [pol["fallback"]],
@@ -94,6 +94,10 @@ def generate(policies_path: Path, commit: str, today: str) -> str:
         "// workspace: each dir must contain that role's AGENTS.md from "
         "control/manifests/_generated/<ROLE>/ (paths adjustable; ids are "
         "not — spawn(agent_id=role.lower())).\n"
+        "// workspace root: /srv/company-agents — dispatcher-READABLE per the "
+        "ADR-B006 delivery path; ~/company-agents (/home) retired by the "
+        "2026-07-22 migration (ProtectHome ruling: the dispatcher never "
+        "traverses /home/mr-robot; harvest reads the workspace).\n"
         "// fallbacks are explicit per agent: agents.list[].model without "
         "fallbacks is STRICT (docs concepts/model-failover).\n"
         "// regenerate after ANY policies.yaml change.\n"

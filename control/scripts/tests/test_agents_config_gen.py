@@ -39,7 +39,7 @@ def test_real_policies_render_13_agents_in_order():
         pol = policies["policies"][policies["agents"][code]]
         assert entry["model"]["primary"] == pol["primary"]
         assert entry["model"]["fallbacks"] == [pol["fallback"]]
-        assert entry["workspace"] == f"~/company-agents/{entry['id']}"
+        assert entry["workspace"] == f"/srv/company-agents/{entry['id']}"
 
 
 def test_model_001_family_decorrelation_survives_generation():

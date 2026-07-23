@@ -1,0 +1,18 @@
+# Gate Decision Record (v2 §8) — emitted by gate-writer (B5.2)
+gate_id: GATE-HUMAN-PR108-6dacf371
+artifact_or_release: 'PR #108: config-gen: emit /srv/company-agents workspaces (dispatcher-readable
+  root, ADR-B006)'
+gate_owner: HUMAN
+decision: APPROVED
+criteria_version: v2§8/v1§15 handoff rev 1
+evidence:
+- https://github.com/msomali/company/pull/108
+- https://github.com/msomali/company/pull/108#pullrequestreview-4760839265
+- merge:6dacf371749e376425b3ffd958703c8c6409cdd4
+findings: []
+conditions: []
+expires: null
+next_owner: Human owner (msomali) — review/merge; the regeneration/re-apply act is
+  yours inside the migration window.
+decided_at: '2026-07-23T04:43:37Z'
+approval_message_ref: https://github.com/msomali/company/pull/108#pullrequestreview-4760839265
