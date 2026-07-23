@@ -68,6 +68,25 @@ class SpawnError(RuntimeError):
     """Spawn attempted and failed (CLI error, timeout, bad response)."""
 
 
+def extract_turn_meta(response: dict | None) -> dict:
+    """Turn metadata from ``openclaw agent --json`` output.
+
+    Two shapes exist (owner finding 3, 2026-07-22 — the first live turn
+    reported durationMs=None because only one was read): the gateway path
+    wraps the run result — ``{status, runId, result: {payloads, meta}}``
+    (agent-via-gateway.ts) — while the embedded fallback emits
+    ``{payloads, meta}`` at top level. ``durationMs`` lives in ``meta`` on
+    either shape.
+    """
+    if not isinstance(response, dict):
+        return {}
+    meta = response.get("meta")
+    if not isinstance(meta, dict):
+        result = response.get("result")
+        meta = result.get("meta") if isinstance(result, dict) else None
+    return meta if isinstance(meta, dict) else {}
+
+
 class SpawnRefused(SpawnError):
     """Refused before any gateway contact (pre-flight): unknown agent,
     missing token, concurrency cap. Nothing was spawned."""
