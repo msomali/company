@@ -30,19 +30,30 @@ contain the SAME relative path. ``handoff.md`` is the standing extra output
 ``handoff_check`` so the episodic refusal fires dispatcher-side, before the
 CI backstop.
 
+Delivery-cycle findings (owner, 2026-07-23): unreadable inputs REFUSE
+instead of crashing (finding 3 — the req-1 gap), the handoff's §14 front
+matter is STAMPED mechanically from envelope + clock (finding 6 — schema
+drift closed by construction; envelopes stop teaching the schema), and
+delivered ``*.md`` heads are pre-validated with the frontmatter-lint
+authority so CI cannot be the first place a bad head is judged.
+
 Custody: no tokens here. Push authentication is the dispatcher clone's
 ambient deploy key (core.sshCommand, B4.3 install). Model credentials,
 gateway tokens, and the bot PAT never enter this module.
 """
 from __future__ import annotations
 
+import datetime
 import re
 import subprocess
 import sys
 from dataclasses import dataclass, field
 from pathlib import Path
 
+import yaml
+
 sys.path.insert(0, str(Path(__file__).resolve().parent))
+import frontmatter_lint  # noqa: E402
 import handoff_check  # noqa: E402
 
 BOT_NAME = "agenticfoundrybot"
@@ -101,29 +112,48 @@ def _resolve_inside(workspace: Path, rel: str) -> Path:
 
 
 def collect(workspace: Path, required_outputs: list[str]) -> list[Collected]:
-    """Collect exactly the declared outputs. Missing/oversized/escaping
-    entries refuse the WHOLE harvest — a partial delivery is a defect, not a
-    delivery (required_outputs is the complete manifest)."""
+    """Collect exactly the declared outputs. Missing/oversized/escaping/
+    unreadable entries refuse the WHOLE harvest — a partial delivery is a
+    defect, not a delivery (required_outputs is the complete manifest)."""
     if not required_outputs:
         raise HarvestRefused(
             "envelope declares no required_outputs — nothing can ship; fix "
             "the envelope (ADR-B006: the field is the delivery manifest)"
         )
     workspace = Path(workspace)
-    if not workspace.is_dir():
+    try:
+        ws_ok = workspace.is_dir()
+    except OSError as exc:  # unreadable parent — refusal, not a crash
+        raise HarvestRefused(
+            f"workspace {workspace} unreadable "
+            f"({exc.__class__.__name__}: {exc})"
+        )
+    if not ws_ok:
         raise HarvestRefused(f"workspace {workspace} does not exist/not a dir")
     out: list[Collected] = []
     problems: list[str] = []
     for rel in required_outputs:
         try:
             src = _resolve_inside(workspace, rel)
+            if not src.is_file():
+                problems.append(
+                    f"required output {rel!r}: missing from workspace")
+                continue
+            data = src.read_bytes()
         except HarvestRefused as exc:
             problems.append(str(exc))
             continue
-        if not src.is_file():
-            problems.append(f"required output {rel!r}: missing from workspace")
+        except OSError as exc:
+            # Owner finding 3 (2026-07-23, req-1 gap): sandbox turns leave
+            # files mode 600 the dispatcher group cannot read; that crashed
+            # the live harvest with a raw traceback and NO episodic event.
+            # Unreadable input is a REFUSAL — loud and episodic by contract.
+            problems.append(
+                f"required output {rel!r}: unreadable "
+                f"({exc.__class__.__name__}: {exc}) — see SOP "
+                "'workspace permissions durability'"
+            )
             continue
-        data = src.read_bytes()
         if len(data) > MAX_FILE_BYTES:
             problems.append(
                 f"required output {rel!r}: {len(data)} bytes exceeds the "
@@ -159,6 +189,99 @@ def validate_handoff(body: str, head_branch: str) -> list[str]:
     return handoff_check.check(body) + handoff_check.role_claim_problems(
         head_branch, body
     )
+
+
+# --------------------------------------------------- front matter (finding 6)
+
+_FM_FENCE_RE = re.compile(r"\A---[ \t]*\n.*?\n---[ \t]*(?:\n|\Z)", re.DOTALL)
+
+
+def strip_leading_front_matter(text: str) -> str:
+    """Remove a leading front-matter fence (the agent's, if any) so the
+    canonical stamp can never be preceded or duplicated."""
+    return _FM_FENCE_RE.sub("", text, count=1)
+
+
+def stamp_front_matter(body: str, *, project_id: str, task_id: str, role: str,
+                       handoff_rel: str, sensitivity: str,
+                       slug: str | None = None) -> str:
+    """Canonical §14 front matter for the delivered handoff, stamped
+    mechanically (owner finding 6, 2026-07-23): every field derives from the
+    envelope + clock, so drift between an agent-authored head and
+    frontmatter-lint is impossible by construction — the live TASK-003 cycle
+    burned an iteration teaching the schema inside acceptance_criteria.
+    The agent's ten-section BODY and its gate-claim line stay untouched
+    (content authorship remains with the role agent); the head is filing
+    metadata, the same category as the commit trailers the harvest already
+    writes. The stamp is schema-validated HERE so that if the artifact
+    schema ever moves, the failure is an episodic dispatcher-side refusal,
+    not a red CI run after the push."""
+    today = datetime.datetime.now(datetime.timezone.utc).date().isoformat()
+    fm = {
+        "artifact_id": handoff_rel,
+        "title": (f"{task_id} {slug} delivery handoff" if slug
+                  else f"{task_id} delivery handoff"),
+        "type": "note",
+        "project": project_id,
+        "owner": f"{role} (agent session, §86-C6 attribution)",
+        "version": "1.0",
+        "status": "READY_FOR_REVIEW",
+        "sensitivity": sensitivity,
+        "created": today,
+        "updated": today,
+    }
+    problems = frontmatter_lint.schema_problems(dict(fm))
+    if problems:
+        raise HarvestRefused(
+            "canonical front-matter stamp fails the artifact schema — the "
+            "stamp and control/schemas/frontmatter.json have drifted; "
+            "refusing dispatcher-side rather than shipping a red PR: "
+            + "; ".join(problems)
+        )
+    head = yaml.safe_dump(fm, sort_keys=False, allow_unicode=True)
+    stripped = strip_leading_front_matter(body).lstrip("\n")
+    return f"---\n{head}---\n\n{stripped}"
+
+
+def frontmatter_problems(items: list[Collected]) -> list[str]:
+    """Pre-validate delivered Markdown against the SAME authority CI's
+    frontmatter-lint applies at merge (owner finding 6): a bad head on any
+    delivered .md red-flags the PR only AFTER the push — too late for the
+    episodic-refusal contract. Mirrors the lint's rules: a leading fence
+    must parse and validate; files under the required-front-matter dirs
+    (except README.md) must carry one; excluded trees are skipped."""
+    problems: list[str] = []
+    for item in items:
+        rel = item.rel_path
+        if not rel.endswith(".md"):
+            continue
+        if rel.split("/", 1)[0] in frontmatter_lint.EXCLUDED_TOP_LEVEL:
+            continue
+        text = item.data.decode("utf-8", errors="replace")
+        try:
+            fm_text = frontmatter_lint.extract_front_matter(text)
+        except ValueError as exc:
+            problems.append(f"{rel}: {exc}")
+            continue
+        required = rel.startswith(
+            tuple(d + "/" for d in frontmatter_lint.REQUIRED_FM_DIRS)
+        ) and not rel.endswith("/README.md")
+        if fm_text is None:
+            if required:
+                problems.append(
+                    f"{rel}: front matter required in this directory")
+            continue
+        try:
+            data = yaml.safe_load(fm_text)
+        except yaml.YAMLError as exc:
+            problems.append(f"{rel}: front matter is not valid YAML ({exc})")
+            continue
+        if not isinstance(data, dict):
+            problems.append(f"{rel}: front matter must be a YAML mapping")
+            continue
+        problems.extend(
+            f"{rel}: {p}" for p in frontmatter_lint.schema_problems(data))
+    return problems
 
 
 def default_git_runner(argv: list[str], cwd: Path, env: dict | None = None):
@@ -263,12 +386,14 @@ def run_harvest(
     role: str,
     required_outputs: list[str],
     slug: str | None = None,
+    data_classification: str | None = None,
     harvester: GitHarvester | None = None,
 ) -> dict:
-    """Full harvest pipeline: collect -> secret-scan -> handoff pre-check ->
-    branch/commit/push. Raises HarvestRefused (episodic, binding req 1) on
-    any content defect; HarvestError on infrastructure failure. Returns
-    {branch, sha, files} on success."""
+    """Full harvest pipeline: collect -> secret-scan -> front-matter
+    pre-check -> handoff stamp+pre-check -> branch/commit/push. Raises
+    HarvestRefused (episodic, binding req 1) on any content defect;
+    HarvestError on infrastructure failure. Returns {branch, sha, files}
+    on success."""
     role_lc = role.lower()
     branch = f"{role_lc}/{task_id}" + (f"-{slug}" if slug else "")
 
@@ -281,13 +406,42 @@ def run_harvest(
             "(ADR-B006 binding requirement 2): " + "; ".join(findings)
         )
 
-    handoff_src = Path(workspace) / "handoff.md"
-    if not handoff_src.is_file():
+    fm_problems = frontmatter_problems(items)
+    if fm_problems:
         raise HarvestRefused(
-            "workspace has no handoff.md — the agent-authored §15 ten-section "
-            "handoff is a standing required output (ADR-B006 item 4)"
+            "delivered front matter fails the artifact schema "
+            "(dispatcher-side pre-validation, same authority as CI "
+            "frontmatter-lint): " + "; ".join(fm_problems)
         )
-    handoff_body = handoff_src.read_text(encoding="utf-8")
+
+    handoff_src = Path(workspace) / "handoff.md"
+    try:
+        if not handoff_src.is_file():
+            raise HarvestRefused(
+                "workspace has no handoff.md — the agent-authored §15 "
+                "ten-section handoff is a standing required output "
+                "(ADR-B006 item 4)"
+            )
+        raw_handoff = handoff_src.read_text(encoding="utf-8")
+    except OSError as exc:
+        # Owner finding 3 (2026-07-23): THIS read crashed the live harvest
+        # with a raw traceback and no episodic event when a sandbox turn
+        # left handoff.md mode 600. Refusal machinery, not a crash.
+        raise HarvestRefused(
+            f"workspace handoff.md unreadable "
+            f"({exc.__class__.__name__}: {exc}) — see SOP 'workspace "
+            "permissions durability' (ADR-B006 req 1: loud, episodic, "
+            "never a traceback)"
+        )
+    except UnicodeDecodeError as exc:
+        raise HarvestRefused(f"workspace handoff.md is not valid UTF-8 ({exc})")
+
+    handoff_rel = f"projects/{project_id}/episodes/{task_id}/handoff.md"
+    handoff_body = stamp_front_matter(
+        raw_handoff, project_id=project_id, task_id=task_id, role=role,
+        handoff_rel=handoff_rel,
+        sensitivity=data_classification or "internal", slug=slug,
+    )
     problems = validate_handoff(handoff_body, branch)
     if problems:
         raise HarvestRefused(
@@ -298,7 +452,6 @@ def run_harvest(
                               handoff_body.encode("utf-8"))]):
         raise HarvestRefused("secret scan hit in handoff.md — delivery refused")
 
-    handoff_rel = f"projects/{project_id}/episodes/{task_id}/handoff.md"
     harvester = harvester or GitHarvester(repo_root=repo_root)
     sha = harvester.deliver(
         branch=branch,
