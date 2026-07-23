@@ -512,6 +512,16 @@ install -d -o mr-robot -g dispatcher -m 750 /srv/company-agents/<role_lc>
 # then: regenerate agents_config_gen output with the new workspace paths
 # and re-apply to BOTH seats (PREREQUISITE 3 — never hand-edit the copies);
 # restart the gateway (standing validator step).
+
+# stale-sandbox step (owner finding, 2026-07-22 migration; the 4a sweep is
+# the precedent): existing role containers bake the OLD workspace path into
+# their mounts and are REUSED at the next spawn — a migrated config alone
+# does not fix them. Remove each role's container so the runtime recreates
+# it against the new root on first spawn:
+docker ps -a --format '{{.Names}}' | grep '^openclaw-sbx-agent-' || echo 'none (clean)'
+# for each migrated role's container:  docker rm -f <name>
+# (sde removed host-side by the owner during the 2026-07-22 migration —
+# evidence with the migration paste; repeat per role as roles activate)
 ```
 
 Until this is executed, `--harvest-once` cannot reach the product
