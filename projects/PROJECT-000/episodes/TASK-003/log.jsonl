@@ -1,3 +1,4 @@
 {"at": "2026-07-22T23:32:28Z", "event": "dispatch", "role": "SDE", "run_id": "agent:sde:task-003-20260722t233135z-790e74"}
 {"at": "2026-07-23T05:13:45Z", "event": "dispatch", "role": "SDE", "run_id": "agent:sde:task-003-20260723t051215z-ee99f7"}
 {"at": "2026-07-23T05:27:00Z", "event": "dispatch", "role": "SDE", "run_id": "agent:sde:task-003-20260723t052559z-0d4ff0"}
+{"at": "2026-07-23T18:43:43Z", "event": "harvest_refused", "reason": "handoff.md fails handoff_check (dispatcher-side pre-validation; CI is the backstop, not the first gate): role claim: branch 'sde/TASK-003-titlecase' is bot-role work (sde/) but the PR body has no machine-readable gate-role claim \u2014 add a line beginning with the word 'role:' followed by one of SAT, SSE, DPC, DCE, PJM, HUMAN. Under ADR-B000 the author-bot cannot review its own PR, so the PR body is the only claim channel gate-writer can parse (\u00a786-C6, MEM-ORG-0004)"}
