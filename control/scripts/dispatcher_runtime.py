@@ -21,6 +21,21 @@ Thin, auditable shell around the B4.2 library modules. Modes:
                          watching). The daemon NEVER dispatches — --daemon
                          constructs no backend, by code; this mode is the
                          only spawning entrypoint.
+  --harvest-once         post-turn delivery harvest (ADR-B006): collect
+                         required_outputs from the role workspace onto
+                         <role>/TASK-###; every outcome episodic.
+  --transition           owner-invoked single §82.4 state transition with
+                         mandatory evidence (added 2026-07-23, delivery-
+                         cycle item 7). --process-review covers exactly the
+                         six gate edges; the INTAKE→…→QUALITY_REVIEW walk
+                         and the DEPLOYMENT→…→CLOSED tail previously had
+                         no sanctioned CLI — TASK-001's §88 walk used
+                         bespoke drivers. Same Dispatcher.transition()
+                         authority as every other path: illegal edges
+                         refuse, BLOCKED-resume rules hold, the onboarded-
+                         T3 rule fires at DEPLOYMENT, and the write commits
+                         to dispatch/TASK-### (finding 2). The daemon still
+                         never transitions anything.
 
 Custody: this process runs as OS user `dispatcher`, outside OpenClaw
 (BA-1.4). Its credentials come from /etc/company/dispatcher.env (systemd
@@ -217,6 +232,31 @@ def dispatch_once(repo_root: Path, project: str, task: str, live: bool,
                         dispatcher=live_d)
 
 
+def transition_once(repo_root: Path, project: str, task: str, to: str,
+                    evidence: str) -> int:
+    """Owner-invoked single state transition (§82.4 machine authority).
+    Every legality rule lives in Dispatcher.transition(); this is transport
+    plus the branch-pinned committer — exactly the --process-review
+    precedent, minus the gate-record semantics that do not apply to
+    non-gate edges."""
+    d = dp.Dispatcher(
+        repo_root=repo_root, backend=None,
+        committer=dp.TaskBranchCommitter(repo_root, f"dispatch/{task}"),
+    )
+    task_dir = d.task_dir(project, task)
+    if not (task_dir / "state.yaml").is_file():
+        print(f"transition: no such task {project}/{task}")
+        return 2
+    try:
+        state = d.transition(task_dir, to, evidence=evidence)
+    except dp.DispatchError as exc:
+        print(f"transition: REFUSED: {exc}")
+        return 2
+    print(f"transition: {task} → {state['state']} "
+          f"(history+log committed to dispatch/{task})")
+    return 0
+
+
 def harvest_once(repo_root: Path, project: str, task: str, workspace,
                  slug: str | None = None, dispatcher=None,
                  harvester=None) -> int:
@@ -282,6 +322,7 @@ def main(argv: list[str] | None = None) -> int:
     mode.add_argument("--process-review", action="store_true")
     mode.add_argument("--dispatch-once", action="store_true")
     mode.add_argument("--harvest-once", action="store_true")
+    mode.add_argument("--transition", action="store_true")
     parser.add_argument("--interval", type=int, default=60)
     parser.add_argument("--project")
     parser.add_argument("--task")
@@ -291,6 +332,9 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--slug", help="optional delivery-branch suffix")
     parser.add_argument("--approver")
     parser.add_argument("--reference")
+    parser.add_argument("--to", help="target state (§82.4 Appendix A name)")
+    parser.add_argument("--evidence",
+                        help="mandatory transition evidence (§82.4)")
     args = parser.parse_args(argv)
 
     if args.once:
@@ -306,6 +350,13 @@ def main(argv: list[str] | None = None) -> int:
                          "--workspace")
         return harvest_once(args.repo_root, args.project, args.task,
                             args.workspace, slug=args.slug)
+    if args.transition:
+        if not (args.project and args.task and args.to
+                and args.evidence is not None):
+            parser.error("--transition requires --project, --task, --to, "
+                         "--evidence")
+        return transition_once(args.repo_root, args.project, args.task,
+                               args.to, args.evidence)
     if args.process_review:
         if not (args.project and args.approver and args.reference):
             parser.error("--process-review requires --project, --approver, "

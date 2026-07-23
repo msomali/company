@@ -264,3 +264,65 @@ def test_dispatch_once_cli_requires_project_and_task(world):
     root, _ = world
     with pytest.raises(SystemExit):
         rt.main(["--dispatch-once", "--repo-root", str(root)])
+
+
+# -- --transition: owner-invoked §82.4 walk (delivery-cycle item 7) ----------
+
+class _NullCommitter:
+    def commit(self, paths, message):
+        pass
+
+
+def _null_committers(monkeypatch):
+    import dispatcher as dp
+    monkeypatch.setattr(dp, "GitCommitter", lambda root_: _NullCommitter())
+    monkeypatch.setattr(dp, "TaskBranchCommitter",
+                        lambda *a, **k: _NullCommitter())
+
+
+def test_transition_walks_forward_edge(world, capsys, monkeypatch):
+    root, task_id = world
+    _null_committers(monkeypatch)
+    code = rt.main(["--transition", "--repo-root", str(root),
+                    "--project", "PROJECT-000", "--task", task_id,
+                    "--to", "DISCOVERY", "--evidence", "PR #112 merged"])
+    assert code == 0
+    assert f"{task_id} → DISCOVERY" in capsys.readouterr().out
+    td = root / "projects/PROJECT-000/episodes" / task_id
+    state = yaml.safe_load((td / "state.yaml").read_text())
+    assert state["state"] == "DISCOVERY"
+    assert state["history"][-1]["evidence"] == "PR #112 merged"
+    log = (td / "log.jsonl").read_text()
+    assert '"transition"' in log
+
+
+def test_transition_illegal_edge_refused(world, capsys, monkeypatch):
+    root, task_id = world
+    _null_committers(monkeypatch)
+    code = rt.main(["--transition", "--repo-root", str(root),
+                    "--project", "PROJECT-000", "--task", task_id,
+                    "--to", "CLOSED", "--evidence", "nope"])
+    assert code == 2
+    assert "REFUSED" in capsys.readouterr().out
+    td = root / "projects/PROJECT-000/episodes" / task_id
+    assert yaml.safe_load((td / "state.yaml").read_text())["state"] == "INTAKE"
+
+
+def test_transition_blank_evidence_refused(world, capsys, monkeypatch):
+    root, task_id = world
+    _null_committers(monkeypatch)
+    code = rt.main(["--transition", "--repo-root", str(root),
+                    "--project", "PROJECT-000", "--task", task_id,
+                    "--to", "DISCOVERY", "--evidence", "  "])
+    assert code == 2
+    assert "evidence" in capsys.readouterr().out
+
+
+def test_transition_unknown_task_refused(world, capsys, monkeypatch):
+    root, _ = world
+    _null_committers(monkeypatch)
+    code = rt.main(["--transition", "--repo-root", str(root),
+                    "--project", "PROJECT-000", "--task", "TASK-404",
+                    "--to", "DISCOVERY", "--evidence", "x"])
+    assert code == 2
+    assert "no such task" in capsys.readouterr().out
