@@ -12,3 +12,5 @@
 {"at": "2026-07-23T23:44:03Z", "event": "transition", "evidence": "ADR-B006 delivery path (PR #102); dispatch+harvest cycle plan", "frm": "DESIGN", "to": "DELIVERY_PLAN"}
 {"at": "2026-07-23T23:44:05Z", "event": "transition", "evidence": "delivery PR #112 merged f3ad550; all four CI checks green on sde/TASK-003-titlecase", "frm": "DELIVERY_PLAN", "to": "IMPLEMENTATION"}
 {"at": "2026-07-23T23:44:07Z", "event": "transition", "evidence": "tests 24/24 in-sandbox, independently verified via docker exec; handoff section 6 self-review", "frm": "IMPLEMENTATION", "to": "QUALITY_REVIEW"}
+{"approver": "msomali", "at": "2026-07-23T23:46:51Z", "decision": "APPROVED", "event": "gate_decision", "gate": "SAT", "record": "GATE-TASK-003-SAT-1.yaml"}
+{"at": "2026-07-23T23:46:51Z", "event": "transition", "evidence": "SAT gate APPROVED by @msomali: https://github.com/msomali/company/pull/112", "frm": "QUALITY_REVIEW", "to": "SECURITY_REVIEW"}
