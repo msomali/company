@@ -12,8 +12,10 @@ acceptance_criteria:
   prove it)
 - no leading or trailing hyphens (test proves it)
 - deliverables restructured to the repo-relative paths in required_outputs (within the workspace)
-- handoff.md at workspace root: ten §15 sections with exact "## <n>. <title>" headings and a "role: SDE" claim line
-required_outputs: required_outputs: [projects/PROJECT-000/src/titlecase_id.py, projects/PROJECT-000/tests/test_titlecase_id.py]
+- 'handoff.md at workspace root: ten §15 sections with exact "## <n>. <title>" headings and a "role: SDE" claim line'
+required_outputs:
+- projects/PROJECT-000/src/titlecase_id.py
+- projects/PROJECT-000/tests/test_titlecase_id.py
 risk_class: low
 tier: T2
 data_classification: internal
