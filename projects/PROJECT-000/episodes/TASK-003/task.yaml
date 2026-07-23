@@ -12,7 +12,7 @@ acceptance_criteria:
   prove it)
 - no leading or trailing hyphens (test proves it)
 - deliverables restructured to the repo-relative paths in required_outputs (within the workspace)
-- 'handoff.md at workspace root re-headed to the ten canonical section titles, in order: "## 1. Requested deliverable", "## 2. Source requirements and traceability", "## 3. Assumptions and constraints", "## 4. Acceptance criteria", "## 5. Known risks and unresolved questions", "## 6. Evidence of self-review", "## 7. Version identifiers", "## 8. Recommended next action", "## 9. Next owner", "## 10. Out of scope" — keep existing content, keep the "role: SDE" claim line'
+- 'handoff.md at workspace root keeps the ten canonical "## <n>. <title>" section headings exactly as they are, but the gate-claim line must read "role: HUMAN" (not "role: SDE") — the claim names the REVIEWING gate (§86-C6 enum: SAT, SSE, DPC, DCE, PJM, HUMAN), and the human owner reviews this delivery; SDE is the author, and the author-bot cannot review its own PR (ADR-B000). Change any line reading "role: SDE" in the body text to "role: HUMAN"; the front-matter "role: SDE" field (authorship) stays.'
 required_outputs:
 - projects/PROJECT-000/src/titlecase_id.py
 - projects/PROJECT-000/tests/test_titlecase_id.py
