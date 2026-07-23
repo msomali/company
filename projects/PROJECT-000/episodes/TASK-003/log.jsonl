@@ -20,3 +20,5 @@
 {"at": "2026-07-23T23:46:56Z", "event": "transition", "evidence": "DPC gate APPROVED by @msomali: https://github.com/msomali/company/pull/112", "frm": "PRIVACY_COMPLIANCE_REVIEW", "to": "PRODUCTION_READINESS"}
 {"approver": "msomali", "at": "2026-07-23T23:46:57Z", "decision": "APPROVED", "event": "gate_decision", "gate": "DCE", "record": "GATE-TASK-003-DCE-1.yaml"}
 {"at": "2026-07-23T23:46:57Z", "event": "transition", "evidence": "DCE gate APPROVED by @msomali: https://github.com/msomali/company/pull/112", "frm": "PRODUCTION_READINESS", "to": "PRODUCT_ACCEPTANCE"}
+{"approver": "msomali", "at": "2026-07-23T23:46:59Z", "decision": "APPROVED", "event": "gate_decision", "gate": "PJM", "record": "GATE-TASK-003-PJM-1.yaml"}
+{"at": "2026-07-23T23:46:59Z", "event": "transition", "evidence": "PJM gate APPROVED by @msomali: https://github.com/msomali/company/pull/112", "frm": "PRODUCT_ACCEPTANCE", "to": "HUMAN_RELEASE_AUTHORIZATION"}
