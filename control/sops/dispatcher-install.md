@@ -359,6 +359,14 @@ sudo -u mr-robot -i openclaw gateway restart
 
 # 6. store perms (the per-agent 700 line in PREREQUISITE 3 applies to main too)
 sudo -u mr-robot -i sh -c 'stat -c "%a %U" ~/.openclaw/agents/main'   # expect: 700 mr-robot
+
+# 7. sandbox-container sweep (owner finding 4a, 2026-07-22): the temporary
+#    main entry can spin an agent-main sandbox as a side effect of ANY
+#    gateway activity while it exists (observed 16:16 during an sde probe).
+#    After entry removal + restart, check and remove:
+docker ps -a --format '{{.Names}}' | grep '^openclaw-sbx-agent-main-' || echo 'none (clean)'
+# for each name printed:  docker rm -f <name>   — paste the sweep output
+# with the evidence either way
 ```
 
 Blast radius: one profile (`anthropic:default`) replaced in place in main's
@@ -463,6 +471,86 @@ record:
    where the approval surfaced.
 
 Paste observations under Evidence below; they close requirement B.
+
+## Delivery (ADR-B006) — workspace product → role branch → PR
+
+Accepted 2026-07-22 (ADR-B006 decision record; binding requirements 1–3).
+The dispatcher harvests, CI opens the PR as the bot, role workspaces stay
+credential-free. Implementation: `control/scripts/harvest.py`,
+`--harvest-once`, `.github/workflows/delivery.yml` (PR #103).
+
+### Envelope-author rule (binding requirement 3)
+
+**`required_outputs` is the COMPLETE delivery manifest.** Anything not
+listed does not ship — the harvest collects exactly these paths, nothing
+else, and refuses the whole delivery when any entry is missing, oversized,
+or escapes the workspace. Author envelopes accordingly:
+
+- Entries are **repo-relative paths** (v1 §17.4: artifact_id =
+  repo-relative path); the agent produces the same relative path inside its
+  workspace. Example: `projects/PROJECT-000/src/titlecase_id.py`.
+- `handoff.md` at the workspace root is a STANDING extra output (ADR-B006
+  item 4): the agent's own §15 ten-section handoff, including a
+  `role: <GATE>` claim line (§86-C6 — delivery branches are role-prefixed,
+  so handoff_check requires the claim). It lands at
+  `projects/<P>/episodes/<TASK>/handoff.md` and becomes the PR body.
+- The task prompt must tell the agent both facts; envelopes whose
+  `required_outputs` name artifacts the prompt never asked for are
+  authoring defects and will refuse at harvest, loudly (binding req 1).
+
+### Workspace location — dispatcher-readable root (owner decision required)
+
+The dispatcher user has NO traverse into `/home/mr-robot` (standing ruling
+2026-07-21; ProtectHome stays). Harvest therefore requires role workspaces
+under a dispatcher-READABLE root. Recommended layout (owner executes;
+adjust as preferred):
+
+```bash
+install -d -o mr-robot -g dispatcher -m 750 /srv/company-agents
+# per role (gateway user owns/writes; dispatcher group-reads):
+install -d -o mr-robot -g dispatcher -m 750 /srv/company-agents/<role_lc>
+# then: regenerate agents_config_gen output with the new workspace paths
+# and re-apply to BOTH seats (PREREQUISITE 3 — never hand-edit the copies);
+# restart the gateway (standing validator step).
+```
+
+Until this is executed, `--harvest-once` cannot reach the product
+(TASK-003's sits in `~/company-agents/sde`); the harvest refuses loudly on
+an unreadable workspace — that refusal is the expected signal, not a
+defect.
+
+### Post-turn harvest (owner-invoked)
+
+```bash
+# after a successful turn (or standalone for a completed one like TASK-003):
+sudo -u dispatcher bash -c 'set -a; . /etc/company/dispatcher.env; set +a; \
+  /srv/company/venv/bin/python control/scripts/dispatcher_runtime.py \
+  --harvest-once --project PROJECT-000 --task TASK-00N \
+  --workspace /srv/company-agents/<role_lc> [--slug <short-slug>]'
+# outcomes (ALL episodic — log.jsonl events committed to dispatch/TASK-00N):
+#   harvest_pushed  → <role>/TASK-00N pushed; delivery.yml opens/updates the
+#                     PR as the bot from the agent handoff
+#   harvest_refused → exit 2, reason printed AND committed (binding req 1);
+#                     includes secret-scan hits (binding req 2 — refused
+#                     BEFORE any commit/push exists; file+pattern only,
+#                     never the value)
+#   harvest_error   → exit 1, infrastructure defect, same episodic record
+# dispatch-once takes --workspace too: successful live turns then harvest
+# automatically; without it the skip is printed loudly.
+```
+
+### Deliverable verification — in the agent's sandbox (owner finding 4b)
+
+Independent test verification runs **inside the agent's sandbox container
+via `docker exec`, never host python** — the sandbox is the runtime that
+produced the work; host interpreters differ and leak host state into
+evidence:
+
+```bash
+docker ps --format '{{.Names}}' | grep '^openclaw-sbx-agent-<role_lc>-'
+docker exec <container> sh -c 'cd /workspace && python3 -m pytest <tests> -q'
+# paste the exec transcript (container name visible) with the gate evidence
+```
 
 ## Evidence — session-spawn pre-flight + first one-shot (owner paste + date)
 
