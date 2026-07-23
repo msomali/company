@@ -255,6 +255,176 @@ sudo -u dispatcher bash -c 'set -a; . /etc/company/dispatcher.env; set +a; \
 sudo -u mr-robot -i openclaw agents list
 ```
 
+**Per-agent store permissions (differential confirmed 2026-07-21):** agent
+dirs under the gateway user's `~/.openclaw/agents/<id>/` that the runtime
+**auto-creates at first spawn** come up **775**; the human-provisioned
+Phase-0 store (`bootstrap`) is **700**. The dir holds that agent's auth
+store (`openclaw-agent.sqlite` — model credentials; SECRETS-MANIFEST
+Mode S note). After provisioning — or after the first spawn of any newly
+activated agent — tighten and verify on the gateway seat:
+
+```bash
+sudo -u mr-robot -i sh -c 'chmod 700 ~/.openclaw/agents/<id>'
+sudo -u mr-robot -i sh -c 'stat -c "%a %U" ~/.openclaw/agents/<id>'
+# expect: 700 mr-robot — anything wider is a finding; paste with evidence
+```
+
+### AUTH-PROVISIONING — fleet credentials live in `main`'s store (corrected 2026-07-22; supersedes the 2026-07-21 revision)
+
+**Semantics (differential 2026-07-22, pinned to source at the installed build
+v2026.7.1 / 2d2ddc43).** Model auth resolves **per profile id: the agent's own
+store first, then the `main` agent's store**
+(`~/.openclaw/agents/main/agent/openclaw-agent.sqlite`) — the literal id
+`main`, ALWAYS, independent of `default: true` marking or `agents.list` order.
+The runtime inheritance base is resolved with an **empty config**:
+`resolveAuthStorePath()` → `resolveDefaultAgentDir({})` → `"main"`
+(`src/agents/auth-profiles/path-resolve.ts`,
+`src/agents/auth-profiles/store.ts` `loadAuthProfileStoreForRuntime`;
+`DEFAULT_AGENT_ID = "main"` in `src/routing/session-key.ts:32`; behavior
+locked by `oauth.fallback-to-main-agent.test.ts`). An agent-local profile with
+the same id SHADOWS main's (merge override precedence,
+`mergeAuthProfileStores`). `main` need NOT be a configured agent — a
+store-only `main` inherits fine (our deployment). The previous revision of
+this block ("default agent's store — `default: true`, else `agents.list[0]`,
+else `main`") was WRONG about the read-through base: `resolveDefaultAgentId(cfg)`
+governs which store the CLI **writes** when `--agent` is omitted
+(`src/commands/models/auth.ts` `resolveModelsAuthAgentDir`), not which store
+the runtime **inherits** from. Sharing via read-through is the documented
+design (`docs/auth-credential-semantics.md`: non-portable profiles "remain
+available through read-through inheritance"; the cross-agent OAuth refresh
+lock exists precisely so N agents can share one profile).
+
+**Two write-targeting traps (both confirmed live 2026-07-22):**
+
+1. The bare no-`--agent` form writes the **configured default agent's** store
+   (bootstrap today) — a store nothing inherits from. Consistent with how the
+   live Anthropic token got stranded in bootstrap's store while all 13 role
+   agents read main's dead one.
+2. `--agent main` is REJECTED while `main` is absent from `agents.list`
+   (`Unknown agent id "main"` — `resolveKnownAgentId` validates against
+   `listAgentIds`, which only implies `main` when the list is EMPTY).
+   Sanctioned bridge: temporarily add a minimal `{ "id": "main" }` entry for
+   the duration of the write, then remove it. Never hand-edit the sqlite
+   (SECRETS-MANIFEST).
+
+**Check (BEFORE any `--live` — unchanged):**
+
+```bash
+# auth overview as THIS agent resolves it — policy primary AND fallback
+# providers must report usable credentials; the `effective=profiles:` path
+# shows WHICH store each provider actually resolves from:
+sudo -u mr-robot -i openclaw models status --agent <id>
+
+# optional real-call probe of the policy's provider (consumes tokens):
+sudo -u mr-robot -i openclaw models status --agent <id> --probe --probe-provider anthropic
+```
+
+Auth warnings / missing-credential reasons = **STOP; no --live attempt.**
+Note the static-token blind spot: a `token`-class credential with no recorded
+expiry reports `static` (healthy-looking) right up until the provider rejects
+it at request time — attempt 3's failure mode. The `--probe` form is the only
+pre-flight that actually proves a static token alive.
+
+**Fleet repair / rotation — ONE write to main's store (preferred; repairs
+inheritance for every role agent at once). Owner-executed, gateway seat:**
+
+```bash
+# 0. baselines (paste with evidence)
+sudo -u mr-robot -i openclaw models status --agent bootstrap
+sudo -u mr-robot -i openclaw models status --agent sde
+
+# 1. mint a fresh subscription token on the host (Mode S custody, ADR-B003:
+#    the owner's Claude sign-in performs the mint; only the token enters the store)
+claude setup-token
+
+# 2. TEMPORARILY add { "id": "main" } to agents.list in ~/.openclaw/openclaw.json
+#    (standing config-validator step applies; gateway hot-reload of an inert,
+#    unbound agent is expected and harmless)
+
+# 3. the write — interactive prompt paste (keeps the token out of argv/history);
+#    overwrite the canonical profile id IN PLACE and record the documented
+#    lifetime so expiry becomes visible instead of a silent 401:
+sudo -u mr-robot -i openclaw models auth --agent main paste-token \
+  --provider anthropic --profile-id anthropic:default --expires-in 365d
+
+# 4. verify: store itself, then read-through, then live probe, then no-regression
+sudo -u mr-robot -i openclaw models status --agent main       # new masked token at anthropic:default; openai OAuth untouched
+sudo -u mr-robot -i openclaw models status --agent sde        # anthropic effective=profiles:~/.openclaw/agents/main/... with the NEW token
+sudo -u mr-robot -i openclaw models status --agent sde --probe --probe-provider anthropic
+sudo -u mr-robot -i openclaw models status --agent bootstrap  # unchanged (local profile shadows main)
+
+# 5. REMOVE the temporary { "id": "main" } entry; validate; restart for
+#    deterministic credential pickup across running sessions
+sudo -u mr-robot -i openclaw gateway restart
+
+# 6. store perms (the per-agent 700 line in PREREQUISITE 3 applies to main too)
+sudo -u mr-robot -i sh -c 'stat -c "%a %U" ~/.openclaw/agents/main'   # expect: 700 mr-robot
+
+# 7. sandbox-container sweep (owner finding 4a, 2026-07-22): the temporary
+#    main entry can spin an agent-main sandbox as a side effect of ANY
+#    gateway activity while it exists (observed 16:16 during an sde probe).
+#    After entry removal + restart, check and remove:
+docker ps -a --format '{{.Names}}' | grep '^openclaw-sbx-agent-main-' || echo 'none (clean)'
+# for each name printed:  docker rm -f <name>   — paste the sweep output
+# with the evidence either way
+```
+
+Blast radius: one profile (`anthropic:default`) replaced in place in main's
+store under the store lock; the openai OAuth profile is a different profile id
+and is untouched; all 13 role agents + SAT inherit immediately (read-through,
+no copies); bootstrap keeps shadowing with its own live token (convergence
+note below). Rollback: none needed — the replaced credential is already dead.
+
+**Credential class (Anthropic, Mode S).** This build has NO OpenClaw-managed
+Anthropic OAuth (`docs/providers/anthropic.md`: API key or Claude-CLI reuse;
+for "OpenClaw-managed OAuth" the docs point at OpenAI). The subscription-
+custody options are:
+
+- **`token`/static from `claude setup-token`** — what both stores hold today
+  (`token:sk-ant-o…`). Direct API calls, inheritance-friendly, subscription
+  quota windows in usage tracking. **No refresh path**: it dies at provider-
+  side expiry/revocation, and without a recorded `--expires-in` OpenClaw shows
+  it `static`/healthy until the first 401. This is the sanctioned fleet class
+  today — ALWAYS record `--expires-in` (setup-token mints are documented
+  ~1 year) and calendar the renewal ~2 weeks early.
+- **`--method cli` is NOT a pure auth write** — corrected from the previous
+  revision, which recommended it. It mirrors the host Claude-CLI login into a
+  `claude-cli`-provider profile AND patches `agents.defaults.models` to route
+  `anthropic/*` through the `claude -p` subprocess runtime
+  (`extensions/anthropic/register.runtime.ts`,
+  `buildAnthropicCliMigrationResult`). That is a runtime-architecture
+  decision (per-turn subprocess, §86-C5 Agent-SDK policy surface), not a
+  credential repair. Do not use it to fix fleet auth.
+- **`api-key`** — Mode P only; forbidden while Mode S is declared (ADR-B003).
+
+Contrast for the record: the shared OpenAI profile is `oauth` class —
+OpenClaw refreshes it itself (serialized by the cross-agent refresh lock),
+which is why openai reports `ok expires in …` while Anthropic shows `static`.
+
+**Steady-state rules:**
+
+- Fleet credentials — and every rotation — are written to MAIN's store via
+  the bridge above. Never the bare no-`--agent` form (trap 1); never
+  per-agent for shared custody.
+- Per-agent writes (`openclaw models auth --agent <id> …`, honored by `login`,
+  `setup-token`, `paste-token`, `paste-api-key`, `order` — `docs/cli/models.md`)
+  are the EXCEPTION, only for deliberately divergent custody (an agent on its
+  own account). Any agent-local profile permanently shadows main's for that
+  profile id — record it in evidence, because rotating main will NOT heal that
+  agent.
+- Known shadow today: bootstrap's local `anthropic:default` (live). At the
+  next Anthropic rotation, rotate main's and retire bootstrap's local profile
+  so custody converges to one point (2026.7.1 ships no `models auth remove`;
+  `login --force` clears a provider's profiles during re-login; never
+  hand-edit the sqlite).
+- OpenAI-family agents and SAT need NO write — they inherit main's live OAuth
+  (verified 2026-07-22). `login --provider openai --agent <id>` only for the
+  divergent-custody exception.
+
+Then re-run the check; paste check + remediation output with pre-flight
+evidence. Custody stays SECRETS-MANIFEST Mode S true: stores host-side,
+credentials created by human sign-in, never in the repo.
+
 ### PREREQUISITE 4 — first-connect device pairing
 
 The dispatcher's first CLI connect may raise a one-time device-pairing
@@ -301,6 +471,96 @@ record:
    where the approval surfaced.
 
 Paste observations under Evidence below; they close requirement B.
+
+## Delivery (ADR-B006) — workspace product → role branch → PR
+
+Accepted 2026-07-22 (ADR-B006 decision record; binding requirements 1–3).
+The dispatcher harvests, CI opens the PR as the bot, role workspaces stay
+credential-free. Implementation: `control/scripts/harvest.py`,
+`--harvest-once`, `.github/workflows/delivery.yml` (PR #103).
+
+### Envelope-author rule (binding requirement 3)
+
+**`required_outputs` is the COMPLETE delivery manifest.** Anything not
+listed does not ship — the harvest collects exactly these paths, nothing
+else, and refuses the whole delivery when any entry is missing, oversized,
+or escapes the workspace. Author envelopes accordingly:
+
+- Entries are **repo-relative paths** (v1 §17.4: artifact_id =
+  repo-relative path); the agent produces the same relative path inside its
+  workspace. Example: `projects/PROJECT-000/src/titlecase_id.py`.
+- `handoff.md` at the workspace root is a STANDING extra output (ADR-B006
+  item 4): the agent's own §15 ten-section handoff, including a
+  `role: <GATE>` claim line (§86-C6 — delivery branches are role-prefixed,
+  so handoff_check requires the claim). It lands at
+  `projects/<P>/episodes/<TASK>/handoff.md` and becomes the PR body.
+- The task prompt must tell the agent both facts; envelopes whose
+  `required_outputs` name artifacts the prompt never asked for are
+  authoring defects and will refuse at harvest, loudly (binding req 1).
+
+### Workspace location — dispatcher-readable root (owner decision required)
+
+The dispatcher user has NO traverse into `/home/mr-robot` (standing ruling
+2026-07-21; ProtectHome stays). Harvest therefore requires role workspaces
+under a dispatcher-READABLE root. Recommended layout (owner executes;
+adjust as preferred):
+
+```bash
+install -d -o mr-robot -g dispatcher -m 750 /srv/company-agents
+# per role (gateway user owns/writes; dispatcher group-reads):
+install -d -o mr-robot -g dispatcher -m 750 /srv/company-agents/<role_lc>
+# then: regenerate agents_config_gen output with the new workspace paths
+# and re-apply to BOTH seats (PREREQUISITE 3 — never hand-edit the copies);
+# restart the gateway (standing validator step).
+
+# stale-sandbox step (owner finding, 2026-07-22 migration; the 4a sweep is
+# the precedent): existing role containers bake the OLD workspace path into
+# their mounts and are REUSED at the next spawn — a migrated config alone
+# does not fix them. Remove each role's container so the runtime recreates
+# it against the new root on first spawn:
+docker ps -a --format '{{.Names}}' | grep '^openclaw-sbx-agent-' || echo 'none (clean)'
+# for each migrated role's container:  docker rm -f <name>
+# (sde removed host-side by the owner during the 2026-07-22 migration —
+# evidence with the migration paste; repeat per role as roles activate)
+```
+
+Until this is executed, `--harvest-once` cannot reach the product
+(TASK-003's sits in `~/company-agents/sde`); the harvest refuses loudly on
+an unreadable workspace — that refusal is the expected signal, not a
+defect.
+
+### Post-turn harvest (owner-invoked)
+
+```bash
+# after a successful turn (or standalone for a completed one like TASK-003):
+sudo -u dispatcher bash -c 'set -a; . /etc/company/dispatcher.env; set +a; \
+  /srv/company/venv/bin/python control/scripts/dispatcher_runtime.py \
+  --harvest-once --project PROJECT-000 --task TASK-00N \
+  --workspace /srv/company-agents/<role_lc> [--slug <short-slug>]'
+# outcomes (ALL episodic — log.jsonl events committed to dispatch/TASK-00N):
+#   harvest_pushed  → <role>/TASK-00N pushed; delivery.yml opens/updates the
+#                     PR as the bot from the agent handoff
+#   harvest_refused → exit 2, reason printed AND committed (binding req 1);
+#                     includes secret-scan hits (binding req 2 — refused
+#                     BEFORE any commit/push exists; file+pattern only,
+#                     never the value)
+#   harvest_error   → exit 1, infrastructure defect, same episodic record
+# dispatch-once takes --workspace too: successful live turns then harvest
+# automatically; without it the skip is printed loudly.
+```
+
+### Deliverable verification — in the agent's sandbox (owner finding 4b)
+
+Independent test verification runs **inside the agent's sandbox container
+via `docker exec`, never host python** — the sandbox is the runtime that
+produced the work; host interpreters differ and leak host state into
+evidence:
+
+```bash
+docker ps --format '{{.Names}}' | grep '^openclaw-sbx-agent-<role_lc>-'
+docker exec <container> sh -c 'cd /workspace && python3 -m pytest <tests> -q'
+# paste the exec transcript (container name visible) with the gate evidence
+```
 
 ## Evidence — session-spawn pre-flight + first one-shot (owner paste + date)
 

@@ -39,6 +39,7 @@ import yaml
 
 import approvals as ap
 import dispatcher as dp
+import harvest as hv
 import metering as mt
 import session_backend as sb
 
@@ -92,6 +93,10 @@ def process_review(repo_root: Path, project: str, approver: str,
         return 0
     failures = 0
     for decision in decisions:
+        # Finding 2 (2026-07-22): every state-writing path targets the task's
+        # dispatch branch explicitly — never the clone's ambient checkout.
+        d.committer = dp.TaskBranchCommitter(
+            repo_root, f"dispatch/{decision.task_id}")
         try:
             record = capture.apply(project, decision)
             print(f"applied: {decision.verb} {decision.task_id} "
@@ -104,10 +109,12 @@ def process_review(repo_root: Path, project: str, approver: str,
 
 
 def dispatch_once(repo_root: Path, project: str, task: str, live: bool,
-                  backend_factory=None) -> int:
+                  backend_factory=None, workspace: Path | None = None) -> int:
     """Owner-invoked one-shot dispatch (activation item 1). Dry-run unless
     ``live``; the only code path that ever constructs a spawning backend.
-    ``backend_factory`` is injectable for tests (fake backend)."""
+    ``backend_factory`` is injectable for tests (fake backend). When
+    ``workspace`` is given, a successful live turn is followed by the
+    ADR-B006 delivery harvest; without it the skip is printed loudly."""
     d = dp.Dispatcher(repo_root=repo_root, backend=None)
     task_dir = d.task_dir(project, task)
     if not (task_dir / "task.yaml").is_file():
@@ -170,6 +177,9 @@ def dispatch_once(repo_root: Path, project: str, task: str, live: bool,
     print(f"  argv: openclaw agent --agent {role.lower()} "
           f"--session-key agent:{role.lower()}:{task.lower()}-<minted-at-spawn> "
           f"--message-file <tmp> --json --timeout {timeout_s}")
+    print(f"  state lane: dispatch/{task} (explicit — finding 2)  "
+          f"delivery lane: {role.lower()}/{task}  "
+          f"workspace: {workspace or '(none — harvest will be skipped LOUDLY)'}")
 
     if not live:
         for r in refusals:
@@ -184,16 +194,82 @@ def dispatch_once(repo_root: Path, project: str, task: str, live: bool,
         return 1
     factory = backend_factory or sb.OpenClawSessionBackend
     backend = factory(policies_path=policies_path, timeout_seconds=timeout_s)
-    live_d = dp.Dispatcher(repo_root=repo_root, backend=backend)
+    live_d = dp.Dispatcher(
+        repo_root=repo_root, backend=backend,
+        committer=dp.TaskBranchCommitter(repo_root, f"dispatch/{task}"),
+    )
     try:
         run_id = live_d.dispatch(project, task)
     except (dp.DispatchError, sb.SpawnError) as exc:
         print(f"dispatch-once: FAILED: {exc}")
         return 1
-    meta = (getattr(backend, "last_response", None) or {}).get("meta") or {}
+    meta = sb.extract_turn_meta(getattr(backend, "last_response", None))
     print(f"dispatch-once: spawned {run_id} durationMs={meta.get('durationMs')}")
-    print("dispatch-once: transcript addressable by the session key above; "
-          "run_id recorded in state.yaml and log.jsonl (committed)")
+    print(f"dispatch-once: transcript addressable by the session key above; "
+          f"run_id recorded in state.yaml and log.jsonl (dispatch/{task})")
+    if workspace is None:
+        print(f"delivery: NOT harvested — no --workspace given. Run "
+              f"--harvest-once --project {project} --task {task} "
+              f"--workspace <role workspace> (ADR-B006 req 1: skips are "
+              f"loud, never silent)")
+        return 0
+    return harvest_once(repo_root, project, task, workspace,
+                        dispatcher=live_d)
+
+
+def harvest_once(repo_root: Path, project: str, task: str, workspace,
+                 slug: str | None = None, dispatcher=None,
+                 harvester=None) -> int:
+    """Post-turn delivery harvest (ADR-B006): collect required_outputs from
+    the role workspace, refuse loudly on any defect, land the product on
+    <role>/TASK-### and the episodic record on dispatch/TASK-###. Every
+    outcome — success, refusal, error — is a committed log.jsonl event
+    (binding requirement 1: never a silent no-op)."""
+    d = dispatcher or dp.Dispatcher(
+        repo_root=repo_root, backend=None,
+        committer=dp.TaskBranchCommitter(repo_root, f"dispatch/{task}"),
+    )
+    task_dir = d.task_dir(project, task)
+    if not (task_dir / "task.yaml").is_file():
+        print(f"harvest-once: no such task {project}/{task}")
+        return 2
+    envelope = yaml.safe_load((task_dir / "task.yaml").read_text(encoding="utf-8"))
+    role = envelope["assigned_role"]
+    try:
+        result = hv.run_harvest(
+            repo_root=repo_root,
+            workspace=Path(workspace),
+            project_id=project,
+            task_id=task,
+            role=role,
+            required_outputs=list(envelope.get("required_outputs") or []),
+            slug=slug,
+            harvester=harvester,
+        )
+    except hv.HarvestRefused as exc:
+        log_path = d.log(task_dir, "harvest_refused", reason=str(exc))
+        d.committer.commit(
+            [log_path],
+            f"{task}: harvest REFUSED — episodic record (ADR-B006 req 1)",
+        )
+        print(f"harvest-once: REFUSED: {exc}")
+        return 2
+    except hv.HarvestError as exc:
+        log_path = d.log(task_dir, "harvest_error", reason=str(exc))
+        d.committer.commit(
+            [log_path], f"{task}: harvest ERROR — episodic record")
+        print(f"harvest-once: FAILED: {exc}")
+        return 1
+    log_path = d.log(task_dir, "harvest_pushed", branch=result["branch"],
+                     sha=result["sha"], files=result["files"])
+    d.committer.commit(
+        [log_path],
+        f"{task}: delivery harvested to {result['branch']} @ {result['sha'][:9]}",
+    )
+    print(f"harvest-once: pushed {result['branch']} @ {result['sha'][:9]} "
+          f"({len(result['files'])} file(s), incl. handoff)")
+    print("harvest-once: delivery.yml opens/updates the PR as the bot from "
+          "the agent handoff; a red run there is a validation-drift finding")
     return 0
 
 
@@ -205,10 +281,14 @@ def main(argv: list[str] | None = None) -> int:
     mode.add_argument("--daemon", action="store_true")
     mode.add_argument("--process-review", action="store_true")
     mode.add_argument("--dispatch-once", action="store_true")
+    mode.add_argument("--harvest-once", action="store_true")
     parser.add_argument("--interval", type=int, default=60)
     parser.add_argument("--project")
     parser.add_argument("--task")
     parser.add_argument("--live", action="store_true")
+    parser.add_argument("--workspace", type=Path,
+                        help="role agent workspace to harvest (ADR-B006)")
+    parser.add_argument("--slug", help="optional delivery-branch suffix")
     parser.add_argument("--approver")
     parser.add_argument("--reference")
     args = parser.parse_args(argv)
@@ -218,7 +298,14 @@ def main(argv: list[str] | None = None) -> int:
     if args.dispatch_once:
         if not (args.project and args.task):
             parser.error("--dispatch-once requires --project and --task")
-        return dispatch_once(args.repo_root, args.project, args.task, args.live)
+        return dispatch_once(args.repo_root, args.project, args.task,
+                             args.live, workspace=args.workspace)
+    if args.harvest_once:
+        if not (args.project and args.task and args.workspace):
+            parser.error("--harvest-once requires --project, --task, "
+                         "--workspace")
+        return harvest_once(args.repo_root, args.project, args.task,
+                            args.workspace, slug=args.slug)
     if args.process_review:
         if not (args.project and args.approver and args.reference):
             parser.error("--process-review requires --project, --approver, "

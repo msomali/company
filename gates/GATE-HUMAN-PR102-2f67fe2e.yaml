@@ -1,0 +1,18 @@
+# Gate Decision Record (v2 §8) — emitted by gate-writer (B5.2)
+gate_id: GATE-HUMAN-PR102-2f67fe2e
+artifact_or_release: 'PR #102: ADR-B006 (PROPOSED): work-product delivery path — dispatcher
+  harvest, CI-opened PRs, credential-free role workspaces'
+gate_owner: HUMAN
+decision: APPROVED
+criteria_version: v2§8/v1§15 handoff rev 1
+evidence:
+- https://github.com/msomali/company/pull/102
+- https://github.com/msomali/company/pull/102#pullrequestreview-4760681336
+- merge:2f67fe2e56cedb86b0ce701799c48584b556ebea
+findings: []
+conditions: []
+expires: null
+next_owner: Human owner (msomali) — ADR approval is constitutionally yours (§44-class
+  change; ADR gate). Bootstrap executes the implementation queue on approval.
+decided_at: '2026-07-23T04:02:23Z'
+approval_message_ref: https://github.com/msomali/company/pull/102#pullrequestreview-4760681336

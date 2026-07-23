@@ -1,0 +1,18 @@
+# Gate Decision Record (v2 §8) — emitted by gate-writer (B5.2)
+gate_id: GATE-HUMAN-PR104-ad3eec56
+artifact_or_release: 'PR #104: SOP: delivery section (ADR-B006 binding req 3) + findings
+  4a/4b'
+gate_owner: HUMAN
+decision: APPROVED
+criteria_version: v2§8/v1§15 handoff rev 1
+evidence:
+- https://github.com/msomali/company/pull/104
+- https://github.com/msomali/company/pull/104#pullrequestreview-4760703140
+- merge:ad3eec56babb77be90a3c741d952dacf015a02e3
+findings: []
+conditions: []
+expires: null
+next_owner: Human owner (msomali) — review/merge; the relocation decision and execution
+  are yours; bootstrap stands by for review findings.
+decided_at: '2026-07-23T04:07:05Z'
+approval_message_ref: https://github.com/msomali/company/pull/104#pullrequestreview-4760703140

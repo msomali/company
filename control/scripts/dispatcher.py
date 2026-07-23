@@ -102,6 +102,68 @@ class GitCommitter:
         )
 
 
+class TaskBranchCommitter(GitCommitter):
+    """GitCommitter pinned to an explicit branch (the dispatch/TASK-### lane).
+
+    Root-cause fix (owner finding 2, 2026-07-22): live dispatch committed to
+    whatever branch the clone happened to have checked out (local ``main`` —
+    unpushable; protection applies to everyone). State/episode commits now
+    create-or-target their task's ``dispatch/TASK-###`` branch explicitly and
+    push via the clone's ambient deploy key (B4.3 install — no tokens here).
+    New branches base on ``origin/main`` when fetchable (WARN + local ``main``
+    otherwise) — never on another task's branch, so lanes cannot cross.
+    Uncommitted task files ride the switch by design; a conflicting switch
+    fails loudly rather than committing to the wrong lane.
+    """
+
+    def __init__(self, repo_root: Path, branch: str, push: bool = True,
+                 runner=None):
+        super().__init__(repo_root)
+        self.branch = branch
+        self.push = push
+        self.runner = runner or self._run
+
+    def _run(self, argv: list[str]):
+        proc = subprocess.run(argv, capture_output=True, text=True,
+                              timeout=300)
+        return proc.returncode, proc.stdout or "", proc.stderr or ""
+
+    def _git(self, *args: str, check: bool = True):
+        rc, out, err = self.runner(["git", "-C", str(self.repo_root), *args])
+        if check and rc != 0:
+            raise RuntimeError(
+                f"git {' '.join(args[:2])}… failed ({rc}) on branch-pinned "
+                f"commit lane {self.branch!r}: {err.strip()[:300]}"
+            )
+        return rc, out, err
+
+    def _ensure_branch(self) -> None:
+        _, out, _ = self._git("rev-parse", "--abbrev-ref", "HEAD")
+        if out.strip() == self.branch:
+            return
+        rc, _, _ = self._git("rev-parse", "--verify", "--quiet",
+                             f"refs/heads/{self.branch}", check=False)
+        if rc == 0:
+            self._git("switch", self.branch)
+            return
+        base = "main"
+        rc, _, _ = self._git("fetch", "origin", "main", check=False)
+        if rc == 0:
+            base = "origin/main"
+        else:
+            print(f"WARN dispatch-branch: fetch origin/main failed; basing "
+                  f"{self.branch} on local 'main'")
+        self._git("switch", "-c", self.branch, base)
+
+    def commit(self, paths: list[Path], message: str) -> None:
+        self._ensure_branch()
+        rels = [str(p.relative_to(self.repo_root)) for p in paths]
+        self._git("add", *rels)
+        self._git("commit", "-m", message)
+        if self.push:
+            self._git("push", "-u", "origin", self.branch)
+
+
 @dataclass
 class DispatchError(Exception):
     reason: str
