@@ -53,6 +53,12 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--base", default="main")
     p.add_argument("--repo", default=DEFAULT_REPO, help="owner/name")
     p.add_argument(
+        "--ok-if-exists",
+        action="store_true",
+        help="Exit 0 when GitHub reports a PR already open for this head "
+        "(delivery re-pushes update the existing PR)",
+    )
+    p.add_argument(
         "--token-file",
         default=str(DEFAULT_TOKEN_FILE),
         help="Read the GitHub token here when the GH_TOKEN env var is unset "
@@ -120,8 +126,12 @@ def main(argv: list[str] | None = None, create=create_pr) -> int:
     }
     try:
         result = create(repo=args.repo, token=token, payload=payload)
-    except urllib.error.HTTPError as exc:  # pragma: no cover - exercised live
+    except urllib.error.HTTPError as exc:
         detail = exc.read().decode("utf-8", "replace")[:500]
+        if args.ok_if_exists and exc.code == 422 and "already exists" in detail:
+            print(f"EXISTS — a pull request is already open for {args.head}; "
+                  "the push updated it. Nothing to create.")
+            return 0
         print(f"pr_open: GitHub API error {exc.code}; nothing opened.\n{detail}",
               file=sys.stderr)
         return 3

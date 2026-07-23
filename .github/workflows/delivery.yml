@@ -1,0 +1,60 @@
+name: delivery   # ADR-B006 — open the handoff PR for a harvested role-branch delivery
+# Triggered by the dispatcher's harvest push (author=agenticfoundrybot,
+# committer=dispatcher — the provenance split of ADR-B006). Validates the
+# agent-authored handoff through the pr_open refusal gate (same authority as
+# handoff-check) and opens/updates the PR as the bot via the EXISTING
+# Actions secret (gate-writer precedent; no second secret — §86-C7 surface
+# unchanged). The dispatcher pre-validates before pushing, so a red run here
+# means validation drift — it is deliberately loud and opens nothing
+# (ADR-B006 binding requirement 1).
+#
+# persist-credentials MUST stay false (gate-writer lesson, 2026-07-17):
+# checkout otherwise pins GITHUB_TOKEN over the PAT.
+on:
+  push:
+    branches:
+      - 'pjm/TASK-*'
+      - 'saa/TASK-*'
+      - 'uud/TASK-*'
+      - 'sde/TASK-*'
+      - 'sat/TASK-*'
+      - 'sse/TASK-*'
+      - 'dpc/TASK-*'
+      - 'dce/TASK-*'
+      - 'de/TASK-*'
+      - 'aie/TASK-*'
+      - 'tw/TASK-*'
+      - 'ale/TASK-*'
+      - 'lin/TASK-*'
+permissions:
+  contents: read
+jobs:
+  open-pr:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.11'}
+      - name: open/update the delivery PR from the agent handoff
+        env:
+          GH_TOKEN: ${{ secrets.GH_TOKEN_AGENTICFOUNDRYBOT }}
+          BRANCH: ${{ github.ref_name }}
+        run: |
+          set -euo pipefail
+          task=$(printf '%s' "$BRANCH" | grep -oE 'TASK-[0-9]+' | head -1)
+          role=$(printf '%s' "$BRANCH" | cut -d/ -f1)
+          if [ -z "$task" ]; then
+            echo "FAIL delivery: branch '$BRANCH' carries no TASK-### fragment"; exit 1
+          fi
+          handoff=$(ls projects/*/episodes/"$task"/handoff.md 2>/dev/null | head -1)
+          if [ -z "$handoff" ]; then
+            echo "FAIL delivery: no projects/*/episodes/$task/handoff.md on $BRANCH — harvest defect (the handoff is a standing required output, ADR-B006 item 4)"
+            exit 1
+          fi
+          python control/scripts/pr_open.py \
+            --title "$task: ${role^^} delivery" \
+            --body-file "$handoff" \
+            --head "$BRANCH" \
+            --ok-if-exists

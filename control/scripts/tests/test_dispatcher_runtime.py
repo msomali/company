@@ -77,6 +77,8 @@ def test_process_review_owner_applies(world, capsys, monkeypatch):
 
     import dispatcher as dp
     monkeypatch.setattr(dp, "GitCommitter", lambda root_: NullCommitter())
+    monkeypatch.setattr(dp, "TaskBranchCommitter",
+                        lambda *a, **k: NullCommitter())
     # advance to QUALITY_REVIEW so a SAT decision is applicable
     d = dp.Dispatcher(repo_root=root, backend=None, committer=NullCommitter())
     td = d.task_dir("PROJECT-000", task_id)
@@ -221,6 +223,8 @@ def test_dispatch_once_live_spawns_records_and_reports(
 
     import dispatcher as dp
     monkeypatch.setattr(dp, "GitCommitter", lambda root_: NullCommitter())
+    monkeypatch.setattr(dp, "TaskBranchCommitter",
+                        lambda *a, **k: NullCommitter())
     made = []
 
     def factory(**kw):
