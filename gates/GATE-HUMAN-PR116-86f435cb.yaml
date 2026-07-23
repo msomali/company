@@ -1,0 +1,18 @@
+# Gate Decision Record (v2 §8) — emitted by gate-writer (B5.2)
+gate_id: GATE-HUMAN-PR116-86f435cb
+artifact_or_release: 'PR #116: SOP+digest: delivery-cycle findings — vintage, perms
+  durability, claim types, episode-close runbook'
+gate_owner: HUMAN
+decision: APPROVED
+criteria_version: v2§8/v1§15 handoff rev 1
+evidence:
+- https://github.com/msomali/company/pull/116
+- https://github.com/msomali/company/pull/116#pullrequestreview-4768776965
+- merge:86f435cb34166142ca54c4e88a30d14c03533cb2
+findings: []
+conditions: []
+expires: null
+next_owner: Human owner (@msomali) — review, merge, host-side execution of the ACL/vintage
+  steps.
+decided_at: '2026-07-23T22:47:22Z'
+approval_message_ref: https://github.com/msomali/company/pull/116#pullrequestreview-4768776965
