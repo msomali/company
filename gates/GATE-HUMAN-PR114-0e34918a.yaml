@@ -1,0 +1,17 @@
+# Gate Decision Record (v2 §8) — emitted by gate-writer (B5.2)
+gate_id: GATE-HUMAN-PR114-0e34918a
+artifact_or_release: 'PR #114: task-create: --validate-record mode for post-creation
+  records (finding 2)'
+gate_owner: HUMAN
+decision: APPROVED
+criteria_version: v2§8/v1§15 handoff rev 1
+evidence:
+- https://github.com/msomali/company/pull/114
+- https://github.com/msomali/company/pull/114#pullrequestreview-4768758673
+- merge:0e34918aa31af29f8d0d43467b572075f6d485d1
+findings: []
+conditions: []
+expires: null
+next_owner: Human owner (@msomali) — review and merge decision.
+decided_at: '2026-07-23T22:43:22Z'
+approval_message_ref: https://github.com/msomali/company/pull/114#pullrequestreview-4768758673
