@@ -25,3 +25,4 @@
 {"approver": "msomali", "at": "2026-07-23T23:47:01Z", "decision": "APPROVED", "event": "gate_decision", "gate": "HUMAN", "record": "GATE-TASK-003-HUMAN-1.yaml"}
 {"at": "2026-07-23T23:47:01Z", "event": "transition", "evidence": "HUMAN gate APPROVED by @msomali: https://github.com/msomali/company/pull/112", "frm": "HUMAN_RELEASE_AUTHORIZATION", "to": "DEPLOYMENT"}
 {"at": "2026-07-23T23:48:47Z", "event": "transition", "evidence": "delivery merged to main f3ad550; artifacts live at projects/PROJECT-000/src|tests; post-merge CI green on main", "frm": "DEPLOYMENT", "to": "PRODUCTION_VERIFICATION"}
+{"at": "2026-07-23T23:48:49Z", "event": "transition", "evidence": "first live task through ADR-B006 path: 5 agent turns (28.9-95s), 2 harvests, cost within $1 cap; findings consolidated into PRs #113-#116", "frm": "PRODUCTION_VERIFICATION", "to": "OPERATIONS_AND_FEEDBACK"}

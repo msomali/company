@@ -1,5 +1,5 @@
 task_id: TASK-003
-state: PRODUCTION_VERIFICATION
+state: OPERATIONS_AND_FEEDBACK
 run_id: agent:sde:task-003-20260723t194153z-99f7ac
 iteration_count: 5
 rejection_cycles: 0
@@ -63,3 +63,8 @@ history:
   to: PRODUCTION_VERIFICATION
   evidence: delivery merged to main f3ad550; artifacts live at projects/PROJECT-000/src|tests;
     post-merge CI green on main
+- at: '2026-07-23T23:48:49Z'
+  from: PRODUCTION_VERIFICATION
+  to: OPERATIONS_AND_FEEDBACK
+  evidence: 'first live task through ADR-B006 path: 5 agent turns (28.9-95s), 2 harvests,
+    cost within $1 cap; findings consolidated into PRs #113-#116'
