@@ -13,13 +13,23 @@ client by construction).
 
 Usage:
   task_create.py path/to/envelope.yaml            # create
-  task_create.py --validate-only path/to/envelope.yaml
+  task_create.py --validate-only path/to/envelope.yaml    # pre-creation
+  task_create.py --validate-record path/to/task.yaml      # post-creation
+
+The two validate modes differ by ONE structural rule: --validate-only is the
+intake contract (task_id must be ABSENT — task-create allocates it, §82.1),
+so it structurally rejects every legitimate task.yaml the moment creation
+has happened. --validate-record (owner finding, 2026-07-23) judges a
+post-creation record as it exists on disk — task_id REQUIRED, the same
+schema + semantic checks otherwise, plus layout consistency when the file
+sits inside an episodes/TASK-### directory. Neither mode writes anything.
 """
 from __future__ import annotations
 
 import argparse
 import datetime
 import json
+import re
 import sys
 from pathlib import Path
 
@@ -97,6 +107,46 @@ def validate(envelope: dict) -> list[str]:
     return problems
 
 
+def validate_record(record_path: Path) -> str:
+    """Validate a POST-creation record (task.yaml with its allocated id).
+
+    Motivation (owner finding, 2026-07-23): live envelope amendments — the
+    TASK-003 iteration-2 rescope — needed re-validation, but --validate-only
+    structurally rejects any record with task_id present. Same authority as
+    create(): every failing field listed, exit 2, nothing written, no model
+    call (structural — no model client in this module).
+    """
+    record = load_envelope(record_path)
+    if "task_id" not in record:
+        raise Rejection([
+            "task_id: missing — a post-creation record carries its allocated "
+            "id (validating a pre-creation envelope? use --validate-only)"
+        ])
+    problems = validate(record)
+
+    # Layout consistency — judged only when the record actually sits in an
+    # episodes/TASK-### directory (amendment drafts in /tmp validate fine).
+    parent = record_path.resolve().parent
+    tid = record.get("task_id")
+    if re.fullmatch(r"TASK-[0-9]{3,}", parent.name):
+        if isinstance(tid, str) and tid != parent.name:
+            problems.append(
+                f"task_id: {tid} does not match its episode directory "
+                f"{parent.name} (TASK-### ids are idempotency keys, "
+                "v2 §78 row 7)"
+            )
+        pid = record.get("project_id")
+        if (parent.parent.name == "episodes" and isinstance(pid, str)
+                and parent.parent.parent.name != pid):
+            problems.append(
+                f"project_id: {pid} does not match the project directory "
+                f"{parent.parent.parent.name} the record lives in"
+            )
+    if problems:
+        raise Rejection(problems)
+    return "VALID"
+
+
 def create(envelope_path: Path, validate_only: bool = False) -> str:
     envelope = load_envelope(envelope_path)
 
@@ -162,11 +212,19 @@ def create(envelope_path: Path, validate_only: bool = False) -> str:
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("envelope", type=Path)
-    parser.add_argument("--validate-only", action="store_true")
+    mode = parser.add_mutually_exclusive_group()
+    mode.add_argument("--validate-only", action="store_true",
+                      help="pre-creation envelope: task_id must be absent")
+    mode.add_argument("--validate-record", action="store_true",
+                      help="post-creation record (task.yaml): task_id must "
+                           "be present; nothing is written")
     args = parser.parse_args(argv)
 
     try:
-        result = create(args.envelope, validate_only=args.validate_only)
+        if args.validate_record:
+            result = validate_record(args.envelope)
+        else:
+            result = create(args.envelope, validate_only=args.validate_only)
     except Rejection as exc:
         print("task-create: REJECTED")
         for p in exc.problems:

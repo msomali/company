@@ -183,3 +183,76 @@ def test_cli_exit_codes(sandbox, capsys):
     assert tc.main([str(bad_file)]) == 2
     out = capsys.readouterr().out
     assert "REJECTED" in out and "objective" in out
+
+
+# -- --validate-record: post-creation records (owner finding, 2026-07-23) ----
+
+def test_validate_record_accepts_created_task(sandbox):
+    tc.create(envelope_file(sandbox, VALID))
+    record = sandbox / "projects/PROJECT-000/episodes/TASK-001/task.yaml"
+    assert tc.validate_record(record) == "VALID"
+
+
+def test_validate_record_requires_task_id(sandbox):
+    path = envelope_file(sandbox, VALID)  # pre-creation shape, no task_id
+    with pytest.raises(tc.Rejection, match="use --validate-only"):
+        tc.validate_record(path)
+
+
+def test_validate_record_outside_episode_layout(sandbox):
+    """Amendment drafts (e.g. /tmp) validate without directory checks."""
+    draft = dict(copy.deepcopy(VALID), task_id="TASK-007")
+    assert tc.validate_record(envelope_file(sandbox, draft)) == "VALID"
+
+
+def test_validate_record_flags_directory_mismatch(sandbox):
+    tc.create(envelope_file(sandbox, VALID))
+    src = sandbox / "projects/PROJECT-000/episodes/TASK-001/task.yaml"
+    stray_dir = sandbox / "projects/PROJECT-000/episodes/TASK-002"
+    stray_dir.mkdir()
+    stray = stray_dir / "task.yaml"
+    stray.write_text(src.read_text())          # still says task_id: TASK-001
+    with pytest.raises(tc.Rejection,
+                       match="does not match its episode directory"):
+        tc.validate_record(stray)
+
+
+def test_validate_record_flags_project_mismatch(sandbox):
+    (sandbox / "projects/PROJECT-999").mkdir()
+    record = dict(copy.deepcopy(VALID), task_id="TASK-001",
+                  project_id="PROJECT-999")
+    home = sandbox / "projects/PROJECT-000/episodes/TASK-001"
+    home.mkdir(parents=True)
+    path = home / "task.yaml"
+    path.write_text(yaml.safe_dump(record))
+    with pytest.raises(tc.Rejection, match="does not match the project"):
+        tc.validate_record(path)
+
+
+def test_validate_record_lists_all_schema_failures(sandbox):
+    bad = dict(copy.deepcopy(VALID), task_id="TASK-1", tier="T9")  # both bad
+    path = envelope_file(sandbox, bad)
+    with pytest.raises(tc.Rejection) as exc:
+        tc.validate_record(path)
+    text = "\n".join(exc.value.problems)
+    assert "task_id" in text and "tier" in text
+
+
+def test_validate_record_writes_nothing(sandbox):
+    tc.create(envelope_file(sandbox, VALID))
+    before = {p: p.stat().st_mtime_ns for p in sandbox.rglob("*") if p.is_file()}
+    tc.validate_record(
+        sandbox / "projects/PROJECT-000/episodes/TASK-001/task.yaml")
+    after = {p: p.stat().st_mtime_ns for p in sandbox.rglob("*") if p.is_file()}
+    assert before == after
+
+
+def test_cli_validate_record_and_exclusivity(sandbox, capsys):
+    tc.create(envelope_file(sandbox, VALID))
+    record = sandbox / "projects/PROJECT-000/episodes/TASK-001/task.yaml"
+    assert tc.main(["--validate-record", str(record)]) == 0
+    assert "VALID" in capsys.readouterr().out
+    assert tc.main(["--validate-record", str(envelope_file(sandbox, VALID))]) == 2
+    assert "use --validate-only" in capsys.readouterr().out
+    with pytest.raises(SystemExit):            # modes are mutually exclusive
+        tc.main(["--validate-only", "--validate-record", str(record)])
