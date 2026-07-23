@@ -1,11 +1,14 @@
 ---
-artifact_id: SDE-TASK-003-handoff
-task_id: TASK-003
-project_id: PROJECT-000
-role: SDE
+artifact_id: projects/PROJECT-000/episodes/TASK-003/handoff.md
+title: TASK-003 titlecase_id delivery handoff
+type: note
+project: PROJECT-000
+owner: SDE (agent session, §86-C6 attribution)
+version: "1.0"
 status: READY_FOR_REVIEW
-version: 1.2.0
-data_classification: internal
+sensitivity: internal
+created: "2026-07-23"
+updated: "2026-07-23"
 ---
 
 role: HUMAN
