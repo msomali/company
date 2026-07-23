@@ -1,0 +1,18 @@
+# Gate Decision Record (v2 §8) — emitted by gate-writer (B5.2)
+gate_id: GATE-HUMAN-PR109-a8c91043
+artifact_or_release: 'PR #109: SOP: stale-sandbox removal step in the workspace migration
+  (item 3, 2026-07-22)'
+gate_owner: HUMAN
+decision: APPROVED
+criteria_version: v2§8/v1§15 handoff rev 1
+evidence:
+- https://github.com/msomali/company/pull/109
+- https://github.com/msomali/company/pull/109#pullrequestreview-4760845896
+- merge:a8c910439ece0a12460f193a155abaa79a08c5b7
+findings: []
+conditions: []
+expires: null
+next_owner: Human owner (msomali) — review/merge; the removal act during migrations
+  is yours (sde already done).
+decided_at: '2026-07-23T04:45:20Z'
+approval_message_ref: https://github.com/msomali/company/pull/109#pullrequestreview-4760845896
