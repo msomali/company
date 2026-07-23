@@ -1,5 +1,5 @@
 task_id: TASK-003
-state: DESIGN
+state: DELIVERY_PLAN
 run_id: agent:sde:task-003-20260723t194153z-99f7ac
 iteration_count: 5
 rejection_cycles: 0
@@ -21,3 +21,7 @@ history:
   from: REQUIREMENTS
   to: DESIGN
   evidence: single-function design per envelope; walking-skeleton precedent TASK-001
+- at: '2026-07-23T23:44:03Z'
+  from: DESIGN
+  to: DELIVERY_PLAN
+  evidence: 'ADR-B006 delivery path (PR #102); dispatch+harvest cycle plan'
