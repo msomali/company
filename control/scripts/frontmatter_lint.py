@@ -61,8 +61,37 @@ def extract_front_matter(text: str):
     return text[4:end]
 
 
+def normalize_dates(data: dict) -> dict:
+    """YAML 1.1 loads bare dates as date objects; on disk they are strings.
+    Normalize so the schema's `type: string` judges file content, not
+    loader coercion. Mutates and returns ``data``."""
+    for key, value in list(data.items()):
+        if isinstance(value, (datetime.date, datetime.datetime)):
+            data[key] = value.isoformat()
+    return data
+
+
+_VALIDATOR = None
+
+
+def schema_problems(data: dict) -> list[str]:
+    """Schema violations for one front-matter mapping, as `where: message`
+    strings. Single authority shared by main() here and the ADR-B006
+    harvest pre-validation (control/scripts/harvest.py) — the two judging
+    the same head differently is exactly the drift the 2026-07-23 delivery
+    cycle exposed."""
+    global _VALIDATOR
+    if _VALIDATOR is None:
+        _VALIDATOR = Draft7Validator(json.loads(SCHEMA_PATH.read_text()))
+    normalize_dates(data)
+    return [
+        ("/".join(str(p) for p in err.absolute_path) or "(root)")
+        + f": {err.message}"
+        for err in sorted(_VALIDATOR.iter_errors(data), key=str)
+    ]
+
+
 def main() -> int:
-    validator = Draft7Validator(json.loads(SCHEMA_PATH.read_text()))
     errors: list[str] = []
     seen_ids: dict[str, str] = {}
 
@@ -91,16 +120,8 @@ def main() -> int:
             errors.append(f"{rel}: front matter must be a YAML mapping")
             continue
 
-        # YAML 1.1 loads bare dates as date objects; on disk they are strings.
-        # Normalize so the schema's `type: string` judges file content, not
-        # loader coercion.
-        for key, value in list(data.items()):
-            if isinstance(value, (datetime.date, datetime.datetime)):
-                data[key] = value.isoformat()
-
-        for err in sorted(validator.iter_errors(data), key=str):
-            where = "/".join(str(p) for p in err.absolute_path) or "(root)"
-            errors.append(f"{rel}: {where}: {err.message}")
+        for problem in schema_problems(data):
+            errors.append(f"{rel}: {problem}")
 
         artifact_id = data.get("artifact_id")
         if isinstance(artifact_id, str):

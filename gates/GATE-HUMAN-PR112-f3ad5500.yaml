@@ -1,0 +1,16 @@
+# Gate Decision Record (v2 §8) — emitted by gate-writer (B5.2)
+gate_id: GATE-HUMAN-PR112-f3ad5500
+artifact_or_release: 'PR #112: TASK-003: SDE delivery'
+gate_owner: HUMAN
+decision: APPROVED
+criteria_version: v2§8/v1§15 handoff rev 1
+evidence:
+- https://github.com/msomali/company/pull/112
+- https://github.com/msomali/company/pull/112#pullrequestreview-4768645906
+- merge:f3ad5500eb016f5bfd18a0c50cd6b9b636c36e41
+findings: []
+conditions: []
+expires: null
+next_owner: HUMAN (human owner) reviews this delivery, per the TASK-003 envelope;
+decided_at: '2026-07-23T22:21:15Z'
+approval_message_ref: https://github.com/msomali/company/pull/112#pullrequestreview-4768645906
