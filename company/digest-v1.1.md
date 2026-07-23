@@ -49,3 +49,23 @@ OPENCLAW COMPANY DIGEST v1.1
 20. Precedence when rules conflict: safety and law > human owner >
     constitution > project policy > task instructions > efficiency.
 ```
+
+## Delivery annex (operational, non-canonical — ADR-B006 / §86-C6)
+
+This annex rides into dispatched prompts with the digest. It binds delivery
+mechanics, not constitutional text — the §49 block above is verbatim and
+unchanged; on any conflict the block wins.
+
+- The task envelope's `required_outputs` is the COMPLETE delivery manifest:
+  produce exactly those repo-relative paths inside your workspace. Nothing
+  else ships — undeclared files are structurally not collected (ADR-B006).
+- Also write `handoff.md` at the workspace root: the ten §15 sections plus
+  ONE claim line `role: <GATE>` naming the gate that will REVIEW the
+  delivery PR — `SAT`, `SSE`, `DPC`, `DCE`, `PJM`, or `HUMAN`. While bot
+  gate roles are inactive, `role: HUMAN` is correct: the human owner is the
+  reviewing gate. Your AUTHORSHIP is recorded separately (branch prefix,
+  front-matter `owner:`, commit trailer) — the claim line is about the
+  reviewer, never about you.
+- Do NOT write front matter on `handoff.md`: the harvest stamps the
+  canonical head mechanically from the envelope and replaces anything you
+  wrote there. Your sections and claim line pass through untouched.
