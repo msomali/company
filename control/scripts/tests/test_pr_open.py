@@ -92,3 +92,53 @@ def test_role_branch_with_claim_passes(tmp_path, monkeypatch):
     rc, spy = run(tmp_path, filled_body() + "\nrole: SAT\n", "sde/TASK-999")
     assert rc == 0
     assert len(spy.calls) == 1
+
+
+class Raise422:
+    """Create stub that raises GitHub's already-exists 422."""
+
+    def __init__(self, message="A pull request already exists for o:b."):
+        import io
+        import json as _json
+        import urllib.error
+        body = _json.dumps({"errors": [{"message": message}]}).encode()
+        self.exc = urllib.error.HTTPError(
+            "https://api.github.com/repos/o/r/pulls", 422, "Unprocessable",
+            {}, io.BytesIO(body))
+        self.calls = []
+
+    def __call__(self, **kwargs):
+        self.calls.append(kwargs)
+        raise self.exc
+
+
+def _run_with_create(tmp_path, create, extra_args=()):
+    body_file = tmp_path / "body.md"
+    body_file.write_text(filled_body())
+    token_file = tmp_path / "gh-token"
+    token_file.write_text("dummy\n")
+    return pr_open.main(
+        ["--title", "T", "--body-file", str(body_file), "--head", "fix/x",
+         "--repo", "o/r", "--token-file", str(token_file), *extra_args],
+        create=create,
+    )
+
+
+def test_already_exists_is_success_with_flag(tmp_path, monkeypatch, capsys):
+    monkeypatch.delenv("GH_TOKEN", raising=False)
+    rc = _run_with_create(tmp_path, Raise422(), extra_args=("--ok-if-exists",))
+    assert rc == 0
+    assert "EXISTS" in capsys.readouterr().out
+
+
+def test_already_exists_still_fails_without_flag(tmp_path, monkeypatch):
+    monkeypatch.delenv("GH_TOKEN", raising=False)
+    rc = _run_with_create(tmp_path, Raise422())
+    assert rc == 3
+
+
+def test_other_422_errors_fail_even_with_flag(tmp_path, monkeypatch):
+    monkeypatch.delenv("GH_TOKEN", raising=False)
+    rc = _run_with_create(tmp_path, Raise422(message="Validation Failed"),
+                          extra_args=("--ok-if-exists",))
+    assert rc == 3
