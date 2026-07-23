@@ -479,6 +479,36 @@ The dispatcher harvests, CI opens the PR as the bot, role workspaces stay
 credential-free. Implementation: `control/scripts/harvest.py`,
 `--harvest-once`, `.github/workflows/delivery.yml` (PR #103).
 
+### Code vintage — the clone runs what is checked out (owner finding 1, 2026-07-23)
+
+State-lane operations (TaskBranchCommitter) deliberately leave
+`/srv/company/repo` checked out on `dispatch/TASK-###`. That checkout is
+ALSO the code every owner-invoked command — and the daemon at start —
+executes: on a branch minted before a tooling change, `control/scripts/`
+REVERTS to the branch's vintage. Bit live 2026-07-23: the legacy
+`dispatch/TASK-003` (minted before TaskBranchCommitter existed) carried
+scripts with no harvest at all; the owner hand-synced main into the branch
+(commit 046f) to run anything. Two rules:
+
+1. **Before ANY owner-invoked runtime command**, put the clone back on
+   current main:
+
+   ```bash
+   sudo -u dispatcher git -C /srv/company/repo switch main
+   sudo -u dispatcher git -C /srv/company/repo pull --ff-only
+   ```
+
+   After repo updates or state-lane work, restart the daemon with the clone
+   on main (`systemctl restart company-dispatcher.service`) — systemd reads
+   the checkout as it is.
+2. Branches MINTED by TaskBranchCommitter base on freshly **fetched
+   origin/main** (pinned by `tests/test_branch_vintage.py`), so a new
+   dispatch branch starts at today's scripts and legacy-style staleness
+   cannot recur at creation. But the branch FREEZES there — a long-lived
+   task lags as main advances (also pinned by test), and reused branches
+   are never rebased. Rule 1 is therefore unconditional, not a
+   legacy-branch special case.
+
 ### Envelope-author rule (binding requirement 3)
 
 **`required_outputs` is the COMPLETE delivery manifest.** Anything not
@@ -497,6 +527,34 @@ or escapes the workspace. Author envelopes accordingly:
 - The task prompt must tell the agent both facts; envelopes whose
   `required_outputs` name artifacts the prompt never asked for are
   authoring defects and will refuse at harvest, loudly (binding req 1).
+- **Front matter is STAMPED, not authored** (owner finding 6, 2026-07-23).
+  The harvest strips any agent-written leading front matter from
+  `handoff.md` and stamps the canonical §14 head mechanically — every
+  field derives from the envelope + clock (`artifact_id` = destination
+  path; `project`/`owner`/`sensitivity` from the envelope;
+  `status: READY_FOR_REVIEW`; dates = harvest clock) — and schema-validates
+  the result dispatcher-side before anything ships. Do NOT teach the
+  front-matter schema in envelopes or acceptance criteria (the TASK-003
+  iteration-5 criterion is the obsolete pattern); the agent's job is the
+  ten SECTIONS plus the claim line, never the filing head. All other
+  delivered `*.md` heads are pre-validated against the same schema at
+  harvest — a bad head refuses the delivery episodically instead of
+  reddening CI after the push.
+- **Two different "role" facts, two channels** (owner finding 5,
+  2026-07-23). The BODY claim line `role: <GATE>` names the gate that
+  REVIEWS the PR — enum `SAT | SSE | DPC | DCE | PJM | HUMAN`
+  (handoff_check CLAIMABLE; §86-C6 claim channel). The FRONT-MATTER
+  `owner:` field — together with the branch prefix and the commit `Role:`
+  trailer — names the role that AUTHORED the work; it is never parsed as
+  a claim. While SAT is contract-only (pre-activation), **`role: HUMAN` is
+  the CORRECT claim on deliveries**: the human owner is the reviewing
+  gate. gate-writer's parser matches only the five bot gate roles and
+  treats everything else as the HUMAN fallback, so an explicit
+  `role: HUMAN` and no-claim converge on the same `gate_owner: HUMAN`
+  record — stated here so nobody "fixes" the explicit claim into a bot
+  role to satisfy a parser. (Sharp edge: gate-writer also accepts a bare
+  `GATE-<ROLE>` marker in review/PR text — do not name-drop such markers
+  in handoff prose.)
 
 ### Workspace location — dispatcher-readable root (owner decision required)
 
@@ -529,6 +587,40 @@ Until this is executed, `--harvest-once` cannot reach the product
 an unreadable workspace — that refusal is the expected signal, not a
 defect.
 
+### Workspace permissions durability (owner finding 4, 2026-07-23)
+
+Sandbox turns create workspace files **mode 600** (`mr-robot` only): the
+dispatcher's group-read on the directories does not extend to new FILES,
+so the next turn after any one-time `chmod` re-breaks harvest — the live
+cycle proved one-time fixes do not survive. Make readability a property of
+the TREE, not of the files that happen to exist today:
+
+```bash
+# RECOMMENDED — default ACLs (inherited by every future create):
+setfacl -R -m g:dispatcher:rX -m d:g:dispatcher:rX /srv/company-agents/<role_lc>
+getfacl /srv/company-agents/<role_lc> | grep default:group:dispatcher  # expect r-x
+```
+
+Why this beats the umask: POSIX ignores the process umask when the parent
+directory carries a default ACL — the common create modes (0666/0777) then
+land with `group:dispatcher` read via the ACL mask, regardless of how
+restrictive the sandbox umask is. **Verify the live differential after the
+next agent turn** (`getfacl <fresh file>`):
+
+- `group:dispatcher:r--` with an effective mask ⇒ durable fix confirmed.
+- `mask::---` ⇒ the writing tool explicitly requests mode 0600 at create —
+  no inherited ACL can widen an explicit 0600. Fall back to a
+  pre-harvest normalization step in the post-turn runbook:
+  `setfacl -R -m g:dispatcher:rX /srv/company-agents/<role_lc>`
+  (idempotent; run before each `--harvest-once`).
+
+Alternative only if the sandbox runtime exposes umask configuration:
+umask `027` plus `chmod g+s` (setgid) on the workspace root so new files
+inherit the `dispatcher` group — same live verification applies. Whichever
+path: the loud backstop is harvest itself — an unreadable input is an
+EPISODIC refusal (`harvest_refused` + committed reason, ADR-B006 req 1),
+never a raw traceback (finding 3 fix).
+
 ### Post-turn harvest (owner-invoked)
 
 ```bash
@@ -548,6 +640,75 @@ sudo -u dispatcher bash -c 'set -a; . /etc/company/dispatcher.env; set +a; \
 # dispatch-once takes --workspace too: successful live turns then harvest
 # automatically; without it the skip is printed loudly.
 ```
+
+### Episode close — walking a delivered task to CLOSED (owner-invoked)
+
+After the delivery PR merges, the §82.4 walk is three legs — all commands
+run from the clone ON CURRENT MAIN first (Code vintage rule 1 above), all
+writes land on `dispatch/TASK-###`:
+
+```bash
+RT='sudo -u dispatcher bash -c'
+RUN='set -a; . /etc/company/dispatcher.env; set +a; /srv/company/venv/bin/python /srv/company/repo/control/scripts/dispatcher_runtime.py'
+
+# LEG 1 — non-gate stretch INTAKE → QUALITY_REVIEW (--transition, one per
+# edge, evidence = the artifact that proves the phase; PR/CI links are
+# harvested into the episode manifest by the collector):
+$RT "$RUN --transition --project PROJECT-000 --task TASK-00N \
+  --to DISCOVERY --evidence 'envelope + charter refs'"
+#   … then REQUIREMENTS, DESIGN, DELIVERY_PLAN, IMPLEMENTATION,
+#   QUALITY_REVIEW — same form, one edge each, tighter evidence the better
+#   (e.g. IMPLEMENTATION: 'delivery PR #NNN merged <sha>; CI green <run url>').
+
+# LEG 2 — the six gates in order, ONE --process-review body (each APPROVE
+# checks the task sits in that gate's expected state, writes the immutable
+# GATE-TASK-00N-<gate>-# record, transitions, commits — approvals bind to
+# the §51 owner identity; bot reviews never satisfy a gate):
+printf '%s\n' \
+  'APPROVE TASK-00N SAT — quality: <evidence>' \
+  'APPROVE TASK-00N SSE — security: <evidence>' \
+  'APPROVE TASK-00N DPC — privacy: <evidence>' \
+  'APPROVE TASK-00N DCE — prod-readiness: <evidence>' \
+  'APPROVE TASK-00N PJM — acceptance: <evidence>' \
+  'APPROVE TASK-00N HUMAN — release: <evidence>' | \
+$RT "$RUN --process-review --project PROJECT-000 \
+  --approver msomali --reference '<PR review URL of record>'"
+# Pre-activation note: the owner IS every gate (roles are contract-only);
+# the HUMAN line lands the task in DEPLOYMENT.
+
+# LEG 3 — tail DEPLOYMENT → CLOSED (--transition ×3: PRODUCTION_VERIFICATION,
+# OPERATIONS_AND_FEEDBACK, CLOSED; evidence: merge sha / verification note /
+# cost+feedback note).
+
+# COLLECT — manifest + completeness, committed to the dispatch lane:
+sudo -u dispatcher /srv/company/venv/bin/python \
+  /srv/company/repo/control/scripts/episode_collector.py \
+  /srv/company/repo/projects/PROJECT-000/episodes/TASK-00N
+sudo -u dispatcher /srv/company/venv/bin/python \
+  /srv/company/repo/control/scripts/episode_collector.py \
+  /srv/company/repo/projects/PROJECT-000/episodes/TASK-00N --check
+sudo -u dispatcher git -C /srv/company/repo add \
+  projects/PROJECT-000/episodes/TASK-00N/manifest.yaml
+sudo -u dispatcher git -C /srv/company/repo commit -m \
+  "TASK-00N: episode manifest (B4.4 collector)"
+sudo -u dispatcher git -C /srv/company/repo push origin dispatch/TASK-00N
+# (transcripts: while live spawns log no model_usage events — metering
+# wiring is §82.8 — §9 completeness does not demand transcripts; archiving
+# the session transcript under transcripts/ anyway follows the TASK-001
+# precedent and is encouraged.)
+
+# LAND — episode state enters main via PR like everything else: bootstrap
+# opens the PR from dispatch/TASK-00N (pr_open.py, ten-section body), the
+# owner reviews/merges. Then: Code vintage rule 1 — clone back to main.
+```
+
+Gate-edge discipline (owner ruling 2026-07-23, structural): `--transition`
+REFUSES any exit from a gate-owned state — approve and reject targets
+alike — naming the owning gate and `--process-review` as the correct path;
+only `--to BLOCKED` (escalation) passes. Gate records are unskippable by
+construction on the runtime CLI, not by procedure. If a legitimate
+non-gate exit from one of those states ever emerges, that is an approvals-
+model change (ADR), not a flag.
 
 ### Deliverable verification — in the agent's sandbox (owner finding 4b)
 

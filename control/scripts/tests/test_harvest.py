@@ -231,3 +231,120 @@ def test_git_harvester_sequence_and_provenance(tmp_path):
     wt = tmp_path / ".delivery-worktrees" / "sde-TASK-9"
     assert (wt / "src/mod.py").read_bytes() == b"x = 1\n"
     assert (wt / "projects/P/episodes/TASK-9/handoff.md").read_text() == "body"
+
+
+# -- unreadable inputs refuse, never crash (finding 3, req-1 gap) ------------
+
+ROOT_SKIP = pytest.mark.skipif(
+    os.geteuid() == 0, reason="root reads through any file mode")
+
+
+@ROOT_SKIP
+def test_collect_unreadable_file_refuses_not_crashes(tmp_path):
+    ws = make_ws(tmp_path, {"src/mod.py": "x\n"})
+    (ws / "src/mod.py").chmod(0)
+    try:
+        with pytest.raises(hv.HarvestRefused, match="unreadable"):
+            hv.collect(ws, ["src/mod.py"])
+    finally:
+        (ws / "src/mod.py").chmod(0o644)
+
+
+@ROOT_SKIP
+def test_run_harvest_unreadable_handoff_refuses(tmp_path):
+    ws = make_ws(tmp_path, {"src/mod.py": "x\n", "handoff.md": valid_handoff()})
+    (ws / "handoff.md").chmod(0)
+    spy = SpyHarvester()
+    try:
+        with pytest.raises(hv.HarvestRefused, match="handoff.md unreadable"):
+            hv.run_harvest(repo_root=tmp_path, workspace=ws,
+                           project_id="PROJECT-000", task_id="TASK-9",
+                           role="SDE", required_outputs=["src/mod.py"],
+                           harvester=spy)
+    finally:
+        (ws / "handoff.md").chmod(0o644)
+    assert spy.calls == []
+
+
+# -- front-matter stamp (finding 6) ------------------------------------------
+
+import frontmatter_lint as fml  # noqa: E402
+import yaml  # noqa: E402
+
+
+def _harvest(tmp_path, ws, **kw):
+    spy = SpyHarvester()
+    kw.setdefault("required_outputs", ["src/mod.py"])
+    hv.run_harvest(repo_root=tmp_path, workspace=ws, project_id="PROJECT-000",
+                   task_id="TASK-9", role="SDE", harvester=spy, **kw)
+    return spy
+
+
+def test_stamp_replaces_agent_front_matter_and_passes_schema(tmp_path):
+    body = "---\nbogus: true\nowner: wrong\n---\n\n" + valid_handoff()
+    ws = make_ws(tmp_path, {"src/mod.py": "x\n", "handoff.md": body})
+    spy = _harvest(tmp_path, ws, data_classification="confidential",
+                   slug="titlecase")
+    delivered = spy.calls[0]["handoff_body"]
+    fm = yaml.safe_load(fml.extract_front_matter(delivered))
+    assert fm["artifact_id"] == "projects/PROJECT-000/episodes/TASK-9/handoff.md"
+    assert fm["title"] == "TASK-9 titlecase delivery handoff"
+    assert fm["project"] == "PROJECT-000"
+    assert fm["owner"].startswith("SDE")
+    assert fm["sensitivity"] == "confidential"   # envelope data_classification
+    assert fm["status"] == "READY_FOR_REVIEW"
+    assert fml.schema_problems(fm) == []         # lint-clean by construction
+    assert "bogus" not in delivered              # agent head fully replaced
+    assert delivered.count("---\n") == 2         # exactly one fence remains
+    assert "## 1." in delivered                  # ten-section body preserved
+    assert "role: SAT" in delivered              # gate-claim line preserved
+
+
+def test_stamp_without_agent_front_matter_defaults(tmp_path):
+    ws = make_ws(tmp_path, {"src/mod.py": "x\n", "handoff.md": valid_handoff()})
+    spy = _harvest(tmp_path, ws)
+    delivered = spy.calls[0]["handoff_body"]
+    fm = yaml.safe_load(fml.extract_front_matter(delivered))
+    assert fm["sensitivity"] == "internal"       # default when envelope silent
+    assert fm["title"] == "TASK-9 delivery handoff"
+    assert fm["version"] == "1.0" and fm["type"] == "note"
+    assert fml.schema_problems(fm) == []
+    # stamping must not break the handoff_check authority CI re-runs
+    assert hv.validate_handoff(delivered, "sde/TASK-9") == []
+
+
+# -- delivered-.md front-matter pre-validation (finding 6, CI parity) --------
+
+def test_delivered_md_bad_front_matter_refused(tmp_path):
+    ws = make_ws(tmp_path, {
+        "docs/x.md": "---\nartifact_id: 7\n---\nbody\n",
+        "handoff.md": valid_handoff(),
+    })
+    spy = SpyHarvester()
+    with pytest.raises(hv.HarvestRefused, match="front matter fails"):
+        hv.run_harvest(repo_root=tmp_path, workspace=ws,
+                       project_id="PROJECT-000", task_id="TASK-9",
+                       role="SDE", required_outputs=["docs/x.md"],
+                       harvester=spy)
+    assert spy.calls == []
+
+
+def test_delivered_md_without_front_matter_ships(tmp_path):
+    ws = make_ws(tmp_path, {"docs/x.md": "plain notes, no fence\n",
+                            "handoff.md": valid_handoff()})
+    spy = _harvest(tmp_path, ws, required_outputs=["docs/x.md"])
+    assert [i.rel_path for i in spy.calls[0]["items"]] == ["docs/x.md"]
+
+
+def test_delivered_md_required_dir_must_carry_front_matter(tmp_path):
+    ws = make_ws(tmp_path, {
+        "control/escalations/ESC-TASK-9.md": "no front matter here\n",
+        "handoff.md": valid_handoff(),
+    })
+    spy = SpyHarvester()
+    with pytest.raises(hv.HarvestRefused, match="required in this directory"):
+        hv.run_harvest(repo_root=tmp_path, workspace=ws,
+                       project_id="PROJECT-000", task_id="TASK-9", role="SDE",
+                       required_outputs=["control/escalations/ESC-TASK-9.md"],
+                       harvester=spy)
+    assert spy.calls == []

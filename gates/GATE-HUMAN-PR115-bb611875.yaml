@@ -1,0 +1,17 @@
+# Gate Decision Record (v2 §8) — emitted by gate-writer (B5.2)
+gate_id: GATE-HUMAN-PR115-bb611875
+artifact_or_release: 'PR #115: runtime: --transition mode — owner-invoked §82.4 walk
+  for non-gate edges (item 7)'
+gate_owner: HUMAN
+decision: APPROVED
+criteria_version: v2§8/v1§15 handoff rev 1
+evidence:
+- https://github.com/msomali/company/pull/115
+- https://github.com/msomali/company/pull/115#pullrequestreview-4768768526
+- merge:bb6118750a96681e11a104a900a0d0c0f3257c26
+findings: []
+conditions: []
+expires: null
+next_owner: Human owner (@msomali) — review and merge decision.
+decided_at: '2026-07-23T22:45:15Z'
+approval_message_ref: https://github.com/msomali/company/pull/115#pullrequestreview-4768768526
