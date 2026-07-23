@@ -1,5 +1,5 @@
 task_id: TASK-003
-state: DISCOVERY
+state: REQUIREMENTS
 run_id: agent:sde:task-003-20260723t194153z-99f7ac
 iteration_count: 5
 rejection_cycles: 0
@@ -12,3 +12,8 @@ history:
   from: INTAKE
   to: DISCOVERY
   evidence: envelope task.yaml on dispatch/TASK-003; PROJECT-000 charter scope
+- at: '2026-07-23T23:43:59Z'
+  from: DISCOVERY
+  to: REQUIREMENTS
+  evidence: acceptance criteria in amended envelope, commits 9b8f17b..b998b5d (iteration
+    scopes 2-5)
