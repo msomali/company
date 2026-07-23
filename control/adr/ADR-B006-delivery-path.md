@@ -5,7 +5,7 @@ type: adr
 project: control
 owner: human-owner
 version: "1.0"
-status: PROPOSED
+status: APPROVED
 sensitivity: internal
 created: <fill on merge>
 updated: <fill on merge>
@@ -130,6 +130,30 @@ the role branch until the next dispatch cycle or owner action — deliberate:
 nothing handoff-invalid reaches review.
 
 **Rejected alternatives.** Folded into custody implications above.
+
+**Decision record (ADR lifecycle).** Decision: **ACCEPTED**, decided-by:
+msomali, 2026-07-22 (webchat; the approving review on this PR's head is the
+acceptance act). Front-matter `status` uses the artifact schema's vocabulary
+(`APPROVED`); this block carries the ADR-lifecycle state, matching ADR-B000–
+B005. Acceptance binds three implementation requirements:
+
+1. **Delivery refusal is loud and episodic.** A handoff-validation refusal (or
+   any delivery-path refusal) is recorded as an episode log event AND surfaces
+   as a red delivery-workflow run — never a silent no-op. The stranded-on-
+   branch state in "What is accepted" (d) is always accompanied by both
+   signals.
+2. **Harvest-side secret scan, pre-push.** The dispatcher scans the collected
+   `required_outputs` set before committing/pushing and refuses the harvest on
+   any hit — PR-CI (POL-009) catching it at merge is too late; pushed branch
+   history is already the exposure. The refusal follows requirement 1's
+   loud-and-episodic rule.
+3. **Envelope-author rule (SOP).** `required_outputs` is the COMPLETE delivery
+   manifest: anything not listed does not ship. The SOP's envelope-authoring
+   guidance states this explicitly so task authors treat the field as the
+   delivery contract, not a hint.
+
+TASK-003 waits for the implementation — no one-off manual harvest (supersedes
+the interim option floated in the proposal discussion).
 
 **Affected files.** `control/scripts/dispatcher_runtime.py` +
 `session_backend.py` (harvest, explicit `dispatch/TASK-###` targeting,
