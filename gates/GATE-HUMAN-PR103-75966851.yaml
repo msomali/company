@@ -1,0 +1,18 @@
+# Gate Decision Record (v2 §8) — emitted by gate-writer (B5.2)
+gate_id: GATE-HUMAN-PR103-75966851
+artifact_or_release: 'PR #103: delivery path (ADR-B006): harvest + delivery workflow
+  + branch-pinned state lane + turn-meta parse'
+gate_owner: HUMAN
+decision: APPROVED
+criteria_version: v2§8/v1§15 handoff rev 1
+evidence:
+- https://github.com/msomali/company/pull/103
+- https://github.com/msomali/company/pull/103#pullrequestreview-4760688588
+- merge:75966851e218843fd563db382a100b643ccddda6
+findings: []
+conditions: []
+expires: null
+next_owner: Human owner (msomali) — review/merge; the host-layout decision in §5 is
+  yours; bootstrap follows with the SOP PR.
+decided_at: '2026-07-23T04:03:57Z'
+approval_message_ref: https://github.com/msomali/company/pull/103#pullrequestreview-4760688588
