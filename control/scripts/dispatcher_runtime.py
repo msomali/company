@@ -34,8 +34,15 @@ Thin, auditable shell around the B4.2 library modules. Modes:
                          authority as every other path: illegal edges
                          refuse, BLOCKED-resume rules hold, the onboarded-
                          T3 rule fires at DEPLOYMENT, and the write commits
-                         to dispatch/TASK-### (finding 2). The daemon still
-                         never transitions anything.
+                         to dispatch/TASK-### (finding 2). HARD INTERLOCK
+                         (owner ruling 2026-07-23): leaving a gate-owned
+                         state is a gate decision — --transition REFUSES it
+                         and names --process-review, the only path that
+                         writes the immutable gate record WITH the
+                         transition. Gate records are structurally
+                         unskippable, not procedurally. Sole exemption:
+                         --to BLOCKED (escalation is not a gate decision).
+                         The daemon still never transitions anything.
 
 Custody: this process runs as OS user `dispatcher`, outside OpenClaw
 (BA-1.4). Its credentials come from /etc/company/dispatcher.env (systemd
@@ -232,13 +239,25 @@ def dispatch_once(repo_root: Path, project: str, task: str, live: bool,
                         dispatcher=live_d)
 
 
+# The six gate-owned states, derived from the approvals module (single
+# source of truth): state → the gate whose decision is the ONLY sanctioned
+# exit. Appendix-A legality is necessary but not sufficient here — a legal
+# edge out of one of these states without a gate record is exactly the
+# bypass the 2026-07-23 owner ruling forbids.
+GATE_OWNED_STATES = {
+    expected: gate for gate, (expected, _to) in ap.GATE_TRANSITIONS.items()
+}
+
+
 def transition_once(repo_root: Path, project: str, task: str, to: str,
                     evidence: str) -> int:
     """Owner-invoked single state transition (§82.4 machine authority).
     Every legality rule lives in Dispatcher.transition(); this is transport
     plus the branch-pinned committer — exactly the --process-review
-    precedent, minus the gate-record semantics that do not apply to
-    non-gate edges."""
+    precedent — plus the gate interlock: exits from gate-owned states
+    refuse (approve AND reject targets alike; a rejection without its
+    record would skip the gate history and the rejection-cycle counter
+    just as surely). Only BLOCKED, escalation, passes."""
     d = dp.Dispatcher(
         repo_root=repo_root, backend=None,
         committer=dp.TaskBranchCommitter(repo_root, f"dispatch/{task}"),
@@ -246,6 +265,21 @@ def transition_once(repo_root: Path, project: str, task: str, to: str,
     task_dir = d.task_dir(project, task)
     if not (task_dir / "state.yaml").is_file():
         print(f"transition: no such task {project}/{task}")
+        return 2
+    frm = yaml.safe_load(
+        (task_dir / "state.yaml").read_text(encoding="utf-8")
+    ).get("state")
+    gate = GATE_OWNED_STATES.get(frm)
+    if gate and to != "BLOCKED":
+        print(
+            f"transition: REFUSED: {frm} is gate-owned — leaving it is the "
+            f"{gate} gate's decision, and gate records are structurally "
+            f"unskippable (owner ruling 2026-07-23). Use --process-review "
+            f"with 'APPROVE {task} {gate} — <evidence>' (or REJECT) so the "
+            f"immutable GATE-{task}-{gate}-# record is written with the "
+            f"transition. Only --to BLOCKED (escalation) leaves a gate "
+            f"state through this mode."
+        )
         return 2
     try:
         state = d.transition(task_dir, to, evidence=evidence)

@@ -326,3 +326,81 @@ def test_transition_unknown_task_refused(world, capsys, monkeypatch):
                     "--to", "DISCOVERY", "--evidence", "x"])
     assert code == 2
     assert "no such task" in capsys.readouterr().out
+
+
+# -- gate interlock (owner ruling 2026-07-23): records structurally
+# -- unskippable --------------------------------------------------------------
+
+def _force_state(root, task_id, state_name):
+    td = root / "projects/PROJECT-000/episodes" / task_id
+    s = yaml.safe_load((td / "state.yaml").read_text())
+    s["state"] = state_name
+    s["history"].append({"at": "2026-07-23T00:00:00Z", "from": "SETUP",
+                         "to": state_name, "evidence": "test setup"})
+    (td / "state.yaml").write_text(yaml.safe_dump(s, sort_keys=False))
+    return td
+
+
+def test_transition_refuses_every_gate_owned_exit(world, capsys, monkeypatch):
+    """All six gate states: the approve-target exit refuses and the message
+    names the owning gate + --process-review. Derived from the SAME
+    approvals table the runtime uses — a new gate is guarded by import."""
+    import approvals as ap
+    root, task_id = world
+    _null_committers(monkeypatch)
+    for gate, (expected, advance_to) in ap.GATE_TRANSITIONS.items():
+        td = _force_state(root, task_id, expected)
+        code = rt.main(["--transition", "--repo-root", str(root),
+                        "--project", "PROJECT-000", "--task", task_id,
+                        "--to", advance_to, "--evidence", "bypass attempt"])
+        out = capsys.readouterr().out
+        assert code == 2, (gate, out)
+        assert "gate-owned" in out and gate in out
+        assert "--process-review" in out
+        state = yaml.safe_load((td / "state.yaml").read_text())
+        assert state["state"] == expected          # untouched
+
+
+def test_transition_refuses_remediation_exit_from_review(world, capsys,
+                                                         monkeypatch):
+    """The REJECT target is gate work too — a recordless walk to
+    REMEDIATION would skip the gate record AND the rejection counter."""
+    root, task_id = world
+    _null_committers(monkeypatch)
+    _force_state(root, task_id, "QUALITY_REVIEW")
+    code = rt.main(["--transition", "--repo-root", str(root),
+                    "--project", "PROJECT-000", "--task", task_id,
+                    "--to", "REMEDIATION", "--evidence", "recordless reject"])
+    assert code == 2
+    out = capsys.readouterr().out
+    assert "SAT" in out and "--process-review" in out
+
+
+def test_transition_blocked_exit_from_gate_state_allowed(world, capsys,
+                                                         monkeypatch):
+    """Escalation is not a gate decision: BLOCKED stays reachable."""
+    root, task_id = world
+    _null_committers(monkeypatch)
+    td = _force_state(root, task_id, "QUALITY_REVIEW")
+    code = rt.main(["--transition", "--repo-root", str(root),
+                    "--project", "PROJECT-000", "--task", task_id,
+                    "--to", "BLOCKED", "--evidence", "ESC-manual: stuck"])
+    assert code == 0
+    assert yaml.safe_load((td / "state.yaml").read_text())["state"] == "BLOCKED"
+
+
+def test_process_review_still_walks_gate_edges(world, capsys, monkeypatch):
+    """The interlock lives in --transition only: the approvals path (which
+    writes the record) still transitions gate states normally."""
+    root, task_id = world
+    _null_committers(monkeypatch)
+    _force_state(root, task_id, "QUALITY_REVIEW")
+    monkeypatch.setattr("sys.stdin",
+                        __import__("io").StringIO(f"APPROVE {task_id} SAT — ok\n"))
+    code = rt.main(["--process-review", "--repo-root", str(root),
+                    "--project", "PROJECT-000", "--approver", "msomali",
+                    "--reference", "PR#interlock-test"])
+    assert code == 0
+    td = root / "projects/PROJECT-000/episodes" / task_id
+    assert yaml.safe_load((td / "state.yaml").read_text())["state"] == \
+        "SECURITY_REVIEW"
