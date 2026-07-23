@@ -8,3 +8,4 @@
 {"at": "2026-07-23T19:44:00Z", "branch": "sde/TASK-003-titlecase", "event": "harvest_pushed", "files": ["projects/PROJECT-000/src/titlecase_id.py", "projects/PROJECT-000/tests/test_titlecase_id.py", "projects/PROJECT-000/episodes/TASK-003/handoff.md"], "sha": "26768085804f48b74615d4cf8d4e66154defe034"}
 {"at": "2026-07-23T23:43:57Z", "event": "transition", "evidence": "envelope task.yaml on dispatch/TASK-003; PROJECT-000 charter scope", "frm": "INTAKE", "to": "DISCOVERY"}
 {"at": "2026-07-23T23:43:59Z", "event": "transition", "evidence": "acceptance criteria in amended envelope, commits 9b8f17b..b998b5d (iteration scopes 2-5)", "frm": "DISCOVERY", "to": "REQUIREMENTS"}
+{"at": "2026-07-23T23:44:01Z", "event": "transition", "evidence": "single-function design per envelope; walking-skeleton precedent TASK-001", "frm": "REQUIREMENTS", "to": "DESIGN"}

@@ -1,5 +1,5 @@
 task_id: TASK-003
-state: REQUIREMENTS
+state: DESIGN
 run_id: agent:sde:task-003-20260723t194153z-99f7ac
 iteration_count: 5
 rejection_cycles: 0
@@ -17,3 +17,7 @@ history:
   to: REQUIREMENTS
   evidence: acceptance criteria in amended envelope, commits 9b8f17b..b998b5d (iteration
     scopes 2-5)
+- at: '2026-07-23T23:44:01Z'
+  from: REQUIREMENTS
+  to: DESIGN
+  evidence: single-function design per envelope; walking-skeleton precedent TASK-001
