@@ -27,6 +27,7 @@ import datetime
 import hashlib
 import json
 import re
+import subprocess
 import sys
 from pathlib import Path
 
@@ -40,6 +41,36 @@ CI_RE = re.compile(r"https://github\.com/[^\s\"']+/actions/runs/\d+[^\s\"']*")
 
 class CollectorError(Exception):
     pass
+
+
+def _default_git_rc(argv: list[str]) -> int:
+    return subprocess.run(argv, capture_output=True, text=True,
+                          timeout=60).returncode
+
+
+def git_tree_root(start: Path) -> Path | None:
+    """The git tree root at/above ``start`` (``.git`` is a dir in the clone,
+    a FILE in a lane worktree — ``exists()`` catches both)."""
+    for d in [start, *start.parents]:
+        if (d / ".git").exists():
+            return d
+    return None
+
+
+def make_ref_tracker(tree_root: Path, runner=None):
+    """ADR-B007 (owner addition, 2026-07-23): 'tracked on a ref' means the
+    path exists in HEAD's tree — committed to the lane branch — not merely
+    present on disk. Presence-on-disk-only is exactly what #122 violated.
+    Returns ``is_tracked(repo_rel) -> bool`` via ``git cat-file -e HEAD:<rel>``
+    (repo_rel is relative to ``tree_root``). Injectable runner keeps tests
+    offline."""
+    run = runner or _default_git_rc
+
+    def is_tracked(repo_rel: str) -> bool:
+        return run(["git", "-C", str(tree_root), "cat-file", "-e",
+                    f"HEAD:{repo_rel}"]) == 0
+
+    return is_tracked
 
 
 def _sha256(path: Path) -> str:
@@ -72,14 +103,23 @@ def harvest_references(task_dir: Path) -> dict:
     return {"pull_requests": sorted(prs), "ci_runs": sorted(ci)}
 
 
-def gate_records_for(task_dir: Path, task_id: str) -> list[str]:
-    gates_dir = task_dir.parents[1] / "gates"
+def gate_records_for(task_dir: Path, task_id: str, is_tracked=None) -> list[str]:
+    """Gate records for ``task_id`` in this tree, relative to the project dir.
+    When ``is_tracked`` is given (lane context), a record present on disk but
+    on NO ref is EXCLUDED — the manifest never attests to records that exist
+    on no lane ref (ADR-B007 closing line; the #122 defect)."""
+    project_dir = task_dir.parents[1]
+    gates_dir = project_dir / "gates"
     if not gates_dir.exists():
         return []
-    return sorted(
-        str(p.relative_to(task_dir.parents[1]))
-        for p in gates_dir.glob(f"GATE-{task_id}-*.yaml")
-    )
+    tree_root = task_dir.parents[3]
+    out: list[str] = []
+    for p in sorted(gates_dir.glob(f"GATE-{task_id}-*.yaml")):
+        if is_tracked is not None and not is_tracked(
+                str(p.relative_to(tree_root))):
+            continue
+        out.append(str(p.relative_to(project_dir)))
+    return out
 
 
 def completeness(task_dir: Path, state: dict) -> dict:
@@ -112,7 +152,7 @@ def completeness(task_dir: Path, state: dict) -> dict:
             "complete": all(checks.values())}
 
 
-def build_manifest(task_dir: Path) -> dict:
+def build_manifest(task_dir: Path, is_tracked=None) -> dict:
     for required in ("task.yaml", "state.yaml"):
         if not (task_dir / required).exists():
             raise CollectorError(f"{task_dir.name}: missing {required}")
@@ -130,13 +170,30 @@ def build_manifest(task_dir: Path) -> dict:
         "iteration_count": state.get("iteration_count", 0),
         "files": files,
         "references": harvest_references(task_dir),
-        "gate_records": gate_records_for(task_dir, task_id),
+        "gate_records": gate_records_for(task_dir, task_id, is_tracked),
         "completeness": completeness(task_dir, state),
     }
 
 
-def collect(task_dir: Path, check: bool = False) -> tuple[dict, list[str]]:
-    manifest = build_manifest(task_dir)
+def collect(task_dir: Path, check: bool = False, verify_refs: bool = False,
+            git_runner=None) -> tuple[dict, list[str]]:
+    """Build (or --check) the episode manifest. ``verify_refs`` (ADR-B007,
+    owner addition) resolves the tree root and requires attested gate records
+    to be TRACKED ON A REF (committed), not merely present on disk — the
+    dispatcher and the close-runbook CLI run against the lane worktree with
+    this on. Left False, the collector is filesystem-only (library/test
+    default)."""
+    is_tracked = None
+    if verify_refs:
+        tree_root = git_tree_root(task_dir)
+        if tree_root is None:
+            raise CollectorError(
+                f"{task_dir}: not inside a git tree — cannot verify gate"
+                " records are on a ref; run against the lane worktree or pass"
+                " --no-verify-refs"
+            )
+        is_tracked = make_ref_tracker(tree_root, runner=git_runner)
+    manifest = build_manifest(task_dir, is_tracked=is_tracked)
     manifest_path = task_dir / "manifest.yaml"
     problems: list[str] = []
     if check:
@@ -165,10 +222,17 @@ def collect(task_dir: Path, check: bool = False) -> tuple[dict, list[str]]:
             # this guards a manifest carried forward against a tree that
             # since lost a record.)
             project_dir = task_dir.parents[1]
+            tree_root = task_dir.parents[3]
             for rel in old.get("gate_records", []):
-                if not (project_dir / rel).is_file():
+                p = project_dir / rel
+                if not p.is_file():
                     problems.append(
                         f"gate record vanished from the lane: {rel}")
+                elif is_tracked is not None and not is_tracked(
+                        str(p.relative_to(tree_root))):
+                    problems.append(
+                        f"gate record present but on NO lane ref "
+                        f"(untracked — the #122 defect): {rel}")
         return manifest, problems
     manifest_path.write_text(
         yaml.safe_dump(manifest, sort_keys=False, allow_unicode=True),
@@ -182,9 +246,17 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("task_dir", type=Path,
                         help="projects/PROJECT-###/episodes/TASK-###")
     parser.add_argument("--check", action="store_true")
+    # ADR-B007: the close-runbook collector runs against the lane worktree,
+    # where gate records MUST be on a ref (default on). --no-verify-refs is
+    # the escape for a non-git tree (e.g. an already-merged main checkout).
+    parser.add_argument("--verify-refs", dest="verify_refs",
+                        action="store_true", default=True)
+    parser.add_argument("--no-verify-refs", dest="verify_refs",
+                        action="store_false")
     args = parser.parse_args(argv)
     try:
-        manifest, problems = collect(args.task_dir, check=args.check)
+        manifest, problems = collect(args.task_dir, check=args.check,
+                                     verify_refs=args.verify_refs)
     except CollectorError as exc:
         print(f"collector: FAIL {exc}")
         return 1

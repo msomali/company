@@ -36,6 +36,9 @@ from pathlib import Path
 import yaml
 from jsonschema import Draft7Validator
 
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+import dispatcher as dp  # noqa: E402  (TaskLane, DEFAULT_LANES_ROOT; no cycle)
+
 REPO_ROOT = Path(__file__).resolve().parents[2]
 TASK_SCHEMA = REPO_ROOT / "control" / "schemas" / "task.json"
 STATE_SCHEMA = REPO_ROOT / "control" / "schemas" / "state.json"
@@ -61,17 +64,28 @@ def load_envelope(path: Path) -> dict:
     return data
 
 
-def allocate_task_id(episodes_dir: Path) -> str:
-    """Next-integer allocation within the project (v1 §52.5); TASK-### ids are
-    idempotency keys (v2 §78 row 7)."""
+def allocate_task_id(projects_dir: Path, lanes_root: Path | None = None) -> str:
+    """Next-integer allocation, GLOBAL across all projects plus any ACTIVE
+    lane worktrees.
+
+    ADR-B007: task ids key the FLAT ``dispatch/TASK-###`` branch and
+    ``/srv/company/lanes/TASK-###`` worktree namespaces, so they must be
+    globally unique — a per-project counter would collide two projects'
+    TASK-001 lanes. A task mid-flight lives on its lane (not yet merged to
+    main), so active lanes are scanned too. TASK-### ids are idempotency keys
+    (v2 §78 row 7)."""
     highest = 0
-    if episodes_dir.exists():
-        for entry in episodes_dir.iterdir():
-            name = entry.name
-            if entry.is_dir() and name.startswith("TASK-"):
-                suffix = name[5:]
-                if suffix.isdigit():
-                    highest = max(highest, int(suffix))
+    if projects_dir.exists():
+        for episodes in projects_dir.glob("*/episodes"):
+            for entry in episodes.iterdir():
+                name = entry.name
+                if entry.is_dir() and name.startswith("TASK-") \
+                        and name[5:].isdigit():
+                    highest = max(highest, int(name[5:]))
+    if lanes_root and lanes_root.exists():
+        for entry in lanes_root.glob("TASK-*"):
+            if entry.is_dir() and entry.name[5:].isdigit():
+                highest = max(highest, int(entry.name[5:]))
     return f"TASK-{highest + 1:03d}"
 
 
@@ -147,7 +161,17 @@ def validate_record(record_path: Path) -> str:
     return "VALID"
 
 
-def create(envelope_path: Path, validate_only: bool = False) -> str:
+def create(envelope_path: Path, validate_only: bool = False,
+           commit_lane: bool = False, repo_root: Path = REPO_ROOT,
+           lanes_root: Path | None = None, lane_factory=None) -> str:
+    """Allocate + write a task envelope and its INTAKE state.
+
+    ADR-B007 (ruling b): ``commit_lane`` (the CLI default) writes the fresh
+    episode DIRECTLY into the task's lane worktree and commits+pushes it —
+    closing the never-committed-task.yaml finding at its source. The
+    ``create()`` function keeps ``commit_lane=False`` so library callers and
+    unit tests opt in; the CLI flips it on (``--no-commit-lane`` to opt out).
+    """
     envelope = load_envelope(envelope_path)
 
     if "task_id" in envelope:
@@ -165,11 +189,8 @@ def create(envelope_path: Path, validate_only: bool = False) -> str:
     if validate_only:
         return "VALID"
 
-    episodes_dir = PROJECTS_DIR / envelope["project_id"] / "episodes"
-    task_id = allocate_task_id(episodes_dir)
-    task_dir = episodes_dir / task_id
-    if task_dir.exists():  # defensive; allocation scans existing dirs
-        raise Rejection([f"task_id: {task_id} already exists (allocation race?)"])
+    lanes_root = Path(lanes_root) if lanes_root else dp.DEFAULT_LANES_ROOT
+    task_id = allocate_task_id(PROJECTS_DIR, lanes_root if commit_lane else None)
 
     final_envelope = {"task_id": task_id, **envelope}
     final_problems = validate(final_envelope)
@@ -197,15 +218,35 @@ def create(envelope_path: Path, validate_only: bool = False) -> str:
     if state_errors:  # internal invariant, not user error
         raise RuntimeError(f"generated state.yaml invalid: {state_errors}")
 
+    task_yaml = yaml.safe_dump(final_envelope, sort_keys=False,
+                              allow_unicode=True)
+    state_yaml = yaml.safe_dump(state, sort_keys=False, allow_unicode=True)
+    ep_rel = f"projects/{envelope['project_id']}/episodes/{task_id}"
+
+    if commit_lane:
+        # ADR-B007: write INTO the lane worktree and commit+push. No clone
+        # copy is made — task_dir resolves to the lane from creation onward.
+        if (lanes_root / task_id).exists():
+            raise Rejection(
+                [f"task_id: lane {lanes_root / task_id} already exists "
+                 "(allocation race?)"])
+        lane = (lane_factory or dp.TaskLane)(
+            repo_root=repo_root, branch=f"dispatch/{task_id}",
+            lanes_root=lanes_root)
+        lane.commit_blobs(
+            {f"{ep_rel}/task.yaml": task_yaml.encode("utf-8"),
+             f"{ep_rel}/state.yaml": state_yaml.encode("utf-8")},
+            f"{task_id}: task-create — envelope + INTAKE state on its lane "
+            "(ADR-B007)",
+        )
+        return task_id
+
+    task_dir = PROJECTS_DIR / envelope["project_id"] / "episodes" / task_id
+    if task_dir.exists():  # defensive; allocation scans existing dirs
+        raise Rejection([f"task_id: {task_id} already exists (allocation race?)"])
     task_dir.mkdir(parents=True)
-    (task_dir / "task.yaml").write_text(
-        yaml.safe_dump(final_envelope, sort_keys=False, allow_unicode=True),
-        encoding="utf-8",
-    )
-    (task_dir / "state.yaml").write_text(
-        yaml.safe_dump(state, sort_keys=False, allow_unicode=True),
-        encoding="utf-8",
-    )
+    (task_dir / "task.yaml").write_text(task_yaml, encoding="utf-8")
+    (task_dir / "state.yaml").write_text(state_yaml, encoding="utf-8")
     return task_id
 
 
@@ -218,13 +259,24 @@ def main(argv: list[str] | None = None) -> int:
     mode.add_argument("--validate-record", action="store_true",
                       help="post-creation record (task.yaml): task_id must "
                            "be present; nothing is written")
+    # ADR-B007 ruling b: commit-at-creation is the DEFAULT.
+    parser.add_argument("--commit-lane", dest="commit_lane",
+                        action="store_true", default=True)
+    parser.add_argument("--no-commit-lane", dest="commit_lane",
+                        action="store_false")
+    parser.add_argument("--repo-root", type=Path, default=REPO_ROOT)
+    parser.add_argument("--lanes-root", type=Path, default=None,
+                        help="ADR-B007 lane root (default /srv/company/lanes)")
     args = parser.parse_args(argv)
 
     try:
         if args.validate_record:
             result = validate_record(args.envelope)
         else:
-            result = create(args.envelope, validate_only=args.validate_only)
+            result = create(args.envelope, validate_only=args.validate_only,
+                            commit_lane=args.commit_lane and not
+                            args.validate_only,
+                            repo_root=args.repo_root, lanes_root=args.lanes_root)
     except Rejection as exc:
         print("task-create: REJECTED")
         for p in exc.problems:

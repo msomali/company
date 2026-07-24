@@ -11,6 +11,7 @@ ref (the PR #122 gap).
 import subprocess
 from pathlib import Path
 
+import pytest
 import yaml
 
 import dispatcher as dp
@@ -187,3 +188,58 @@ def test_check_passes_when_records_present_in_lane(tmp_path):
     ec.collect(episode)
     _, problems = ec.collect(episode, check=True)
     assert problems == []
+
+
+# -- tracked ON A REF, not merely on disk (owner addition #1, the #122 rule) --
+
+def test_verify_refs_excludes_ondisk_only_gate_record(tmp_path):
+    _, clone = _origin_and_clone(tmp_path)
+    lane, episode = _build_lane_episode(clone, tmp_path / "lanes")
+    # a record written into the lane worktree but NEVER committed (on disk,
+    # on no ref) — exactly the #122 shape
+    (lane.path / "projects/PROJECT-000/gates/GATE-TASK-3-DCE-1.yaml"
+     ).write_text("gate_owner: DCE\n")
+    manifest, _ = ec.collect(episode, verify_refs=True)
+    # committed records attested; the on-disk-only one is NOT
+    assert manifest["gate_records"] == [
+        "gates/GATE-TASK-3-HUMAN-1.yaml",
+        "gates/GATE-TASK-3-SAT-1.yaml",
+    ]
+    # without verify_refs the on-disk-only record WOULD leak in (proves the
+    # check is what excludes it, not some other filter)
+    loose, _ = ec.collect(episode, verify_refs=False)
+    assert "gates/GATE-TASK-3-DCE-1.yaml" in loose["gate_records"]
+
+
+def test_verify_refs_check_flags_untracked_attested_record(tmp_path):
+    _, clone = _origin_and_clone(tmp_path)
+    lane, episode = _build_lane_episode(clone, tmp_path / "lanes")
+    # collect+attest while SAT is committed; then rewrite it uncommitted so
+    # the on-disk file exists but HEAD's version is unchanged... to make it
+    # 'on no ref', delete from the working tree AND stage nothing: simulate a
+    # manifest that names a record which is not in HEAD by attesting to an
+    # extra one first.
+    ec.collect(episode, verify_refs=True)               # manifest: SAT + HUMAN
+    # now add an untracked record and hand-write it into the OLD manifest's
+    # gate_records to simulate a stale/forged attestation
+    (lane.path / "projects/PROJECT-000/gates/GATE-TASK-3-DCE-1.yaml"
+     ).write_text("gate_owner: DCE\n")
+    mpath = episode / "manifest.yaml"
+    m = yaml.safe_load(mpath.read_text())
+    m["gate_records"].append("gates/GATE-TASK-3-DCE-1.yaml")
+    mpath.write_text(yaml.safe_dump(m))
+    _, problems = ec.collect(episode, check=True, verify_refs=True)
+    assert any("on NO lane ref" in p and "DCE" in p for p in problems)
+
+
+def test_verify_refs_requires_git_tree(tmp_path):
+    # a bare filesystem episode (no .git anywhere) with verify_refs on errors
+    # loudly rather than silently passing (the #122 failure mode)
+    ep = tmp_path / "projects/PROJECT-000/episodes/TASK-9"
+    ep.mkdir(parents=True)
+    (ep / "task.yaml").write_text("task_id: TASK-9\n")
+    (ep / "state.yaml").write_text(
+        "task_id: TASK-9\nstate: CLOSED\nhistory: [{at: t, from: NONE, "
+        "to: INTAKE, evidence: x}]\n")
+    with pytest.raises(ec.CollectorError, match="not inside a git tree"):
+        ec.collect(ep, verify_refs=True)

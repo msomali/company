@@ -69,45 +69,81 @@ import session_backend as sb
 REPO_ROOT = Path(__file__).resolve().parents[2]
 
 
-def scan(repo_root: Path) -> list[dict]:
-    rows = []
+def _row(project: str, task: str, state: dict, source: str) -> dict:
+    return {
+        "project": project,
+        "task": state.get("task_id", task),
+        "state": state.get("state"),
+        "run_id": state.get("run_id"),
+        "rejection_cycles": state.get("rejection_cycles", 0),
+        "source": source,
+    }
+
+
+def scan(repo_root: Path, lanes_root: Path | None = None
+         ) -> tuple[list[dict], list[str]]:
+    """ADR-B007 PR 2: report the UNION of the clone (closed/merged tasks on
+    main) and the active lane worktrees, LANE-AUTHORITATIVE where both carry
+    a task. Divergence (a task whose lane state differs from its stale main
+    copy) is a loud WARN, never a silent pick — main is a deliberately
+    lagging mirror (episodes land on main via PR at close). Returns
+    (rows, warnings); each row names the tree that answered."""
+    lanes_root = Path(lanes_root or dp.DEFAULT_LANES_ROOT)
+    clone: dict[str, dict] = {}
     projects = repo_root / "projects"
-    if not projects.exists():
-        return rows
-    for episodes in sorted(projects.glob("PROJECT-*/episodes")):
-        for task_dir in sorted(episodes.glob("TASK-*")):
-            state_file = task_dir / "state.yaml"
-            if not state_file.exists():
-                continue
-            state = yaml.safe_load(state_file.read_text(encoding="utf-8"))
-            rows.append({
-                "project": episodes.parent.name,
-                "task": state.get("task_id", task_dir.name),
-                "state": state.get("state"),
-                "run_id": state.get("run_id"),
-                "rejection_cycles": state.get("rejection_cycles", 0),
-            })
-    return rows
+    if projects.exists():
+        for episodes in sorted(projects.glob("PROJECT-*/episodes")):
+            for td in sorted(episodes.glob("TASK-*")):
+                sf = td / "state.yaml"
+                if sf.exists():
+                    st = yaml.safe_load(sf.read_text(encoding="utf-8"))
+                    clone[td.name] = _row(episodes.parent.name, td.name, st,
+                                          "main")
+    lane: dict[str, dict] = {}
+    if lanes_root.exists():
+        for lane_dir in sorted(lanes_root.glob("TASK-*")):
+            for sf in sorted(lane_dir.glob(
+                    "projects/PROJECT-*/episodes/TASK-*/state.yaml")):
+                st = yaml.safe_load(sf.read_text(encoding="utf-8"))
+                lane[lane_dir.name] = _row(sf.parents[2].name, lane_dir.name,
+                                           st, "lane")
+    rows, warnings = [], []
+    for tid in sorted(set(clone) | set(lane)):
+        if tid in lane:
+            row = lane[tid]
+            if tid in clone and clone[tid]["state"] != row["state"]:
+                warnings.append(
+                    f"{tid}: lane state {row['state']!r} diverges from main "
+                    f"{clone[tid]['state']!r} — lane authoritative")
+            rows.append(row)
+        else:
+            rows.append(clone[tid])
+    return rows, warnings
 
 
-def report(repo_root: Path) -> int:
-    rows = scan(repo_root)
+def report(repo_root: Path, lanes_root: Path | None = None) -> int:
+    rows, warnings = scan(repo_root, lanes_root)
     try:
         pool = mt.SessionPool(repo_root / "control/models/policies.yaml")
         cap = pool.cap
     except mt.MeteringError as exc:
         print(f"WARN concurrency: {exc}")
         cap = None
+    for w in warnings:
+        print(f"WARN scan-divergence: {w}")
     print(f"dispatcher: {len(rows)} task(s); concurrency cap={cap}")
     for r in rows:
         print(f"  {r['project']}/{r['task']}: {r['state']}"
-              f" run_id={r['run_id']} rejections={r['rejection_cycles']}")
+              f" run_id={r['run_id']} rejections={r['rejection_cycles']}"
+              f" [{r['source']}]")
     return 0
 
 
 def process_review(repo_root: Path, project: str, approver: str,
-                   reference: str, body: str) -> int:
-    d = dp.Dispatcher(repo_root=repo_root, backend=None)
+                   reference: str, body: str,
+                   lanes_root: Path | None = None) -> int:
+    lanes_root = lanes_root or dp.DEFAULT_LANES_ROOT
+    d = dp.Dispatcher(repo_root=repo_root, backend=None, lanes_root=lanes_root)
     capture = ap.ApprovalsCapture(d, repo_root=repo_root)
     decisions = ap.parse_decisions(body, approver=approver, reference=reference)
     if not decisions:
@@ -119,7 +155,7 @@ def process_review(repo_root: Path, project: str, approver: str,
         # Finding 2 (2026-07-22): every state-writing path targets the task's
         # dispatch branch explicitly — never the clone's ambient checkout.
         d.committer = dp.TaskBranchCommitter(
-            repo_root, f"dispatch/{decision.task_id}")
+            repo_root, f"dispatch/{decision.task_id}", lanes_root=lanes_root)
         try:
             record = capture.apply(project, decision)
             print(f"applied: {decision.verb} {decision.task_id} "
@@ -132,13 +168,15 @@ def process_review(repo_root: Path, project: str, approver: str,
 
 
 def dispatch_once(repo_root: Path, project: str, task: str, live: bool,
-                  backend_factory=None, workspace: Path | None = None) -> int:
+                  backend_factory=None, workspace: Path | None = None,
+                  lanes_root: Path | None = None) -> int:
     """Owner-invoked one-shot dispatch (activation item 1). Dry-run unless
     ``live``; the only code path that ever constructs a spawning backend.
     ``backend_factory`` is injectable for tests (fake backend). When
     ``workspace`` is given, a successful live turn is followed by the
     ADR-B006 delivery harvest; without it the skip is printed loudly."""
-    d = dp.Dispatcher(repo_root=repo_root, backend=None)
+    lanes_root = lanes_root or dp.DEFAULT_LANES_ROOT
+    d = dp.Dispatcher(repo_root=repo_root, backend=None, lanes_root=lanes_root)
     task_dir = d.task_dir(project, task)
     if not (task_dir / "task.yaml").is_file():
         print(f"dispatch-once: no such task {project}/{task}")
@@ -218,8 +256,9 @@ def dispatch_once(repo_root: Path, project: str, task: str, live: bool,
     factory = backend_factory or sb.OpenClawSessionBackend
     backend = factory(policies_path=policies_path, timeout_seconds=timeout_s)
     live_d = dp.Dispatcher(
-        repo_root=repo_root, backend=backend,
-        committer=dp.TaskBranchCommitter(repo_root, f"dispatch/{task}"),
+        repo_root=repo_root, backend=backend, lanes_root=lanes_root,
+        committer=dp.TaskBranchCommitter(repo_root, f"dispatch/{task}",
+                                         lanes_root=lanes_root),
     )
     try:
         run_id = live_d.dispatch(project, task)
@@ -237,7 +276,7 @@ def dispatch_once(repo_root: Path, project: str, task: str, live: bool,
               f"loud, never silent)")
         return 0
     return harvest_once(repo_root, project, task, workspace,
-                        dispatcher=live_d)
+                        dispatcher=live_d, lanes_root=lanes_root)
 
 
 # The six gate-owned states, derived from the approvals module (single
@@ -251,7 +290,7 @@ GATE_OWNED_STATES = {
 
 
 def transition_once(repo_root: Path, project: str, task: str, to: str,
-                    evidence: str) -> int:
+                    evidence: str, lanes_root: Path | None = None) -> int:
     """Owner-invoked single state transition (§82.4 machine authority).
     Every legality rule lives in Dispatcher.transition(); this is transport
     plus the branch-pinned committer — exactly the --process-review
@@ -259,9 +298,11 @@ def transition_once(repo_root: Path, project: str, task: str, to: str,
     refuse (approve AND reject targets alike; a rejection without its
     record would skip the gate history and the rejection-cycle counter
     just as surely). Only BLOCKED, escalation, passes."""
+    lanes_root = lanes_root or dp.DEFAULT_LANES_ROOT
     d = dp.Dispatcher(
-        repo_root=repo_root, backend=None,
-        committer=dp.TaskBranchCommitter(repo_root, f"dispatch/{task}"),
+        repo_root=repo_root, backend=None, lanes_root=lanes_root,
+        committer=dp.TaskBranchCommitter(repo_root, f"dispatch/{task}",
+                                         lanes_root=lanes_root),
     )
     task_dir = d.task_dir(project, task)
     if not (task_dir / "state.yaml").is_file():
@@ -294,15 +335,17 @@ def transition_once(repo_root: Path, project: str, task: str, to: str,
 
 def harvest_once(repo_root: Path, project: str, task: str, workspace,
                  slug: str | None = None, dispatcher=None,
-                 harvester=None) -> int:
+                 harvester=None, lanes_root: Path | None = None) -> int:
     """Post-turn delivery harvest (ADR-B006): collect required_outputs from
     the role workspace, refuse loudly on any defect, land the product on
     <role>/TASK-### and the episodic record on dispatch/TASK-###. Every
     outcome — success, refusal, error — is a committed log.jsonl event
     (binding requirement 1: never a silent no-op)."""
+    lanes_root = lanes_root or dp.DEFAULT_LANES_ROOT
     d = dispatcher or dp.Dispatcher(
-        repo_root=repo_root, backend=None,
-        committer=dp.TaskBranchCommitter(repo_root, f"dispatch/{task}"),
+        repo_root=repo_root, backend=None, lanes_root=lanes_root,
+        committer=dp.TaskBranchCommitter(repo_root, f"dispatch/{task}",
+                                         lanes_root=lanes_root),
     )
     task_dir = d.task_dir(project, task)
     if not (task_dir / "task.yaml").is_file():
@@ -366,6 +409,9 @@ def harvest_once(repo_root: Path, project: str, task: str, workspace,
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--repo-root", type=Path, default=REPO_ROOT)
+    parser.add_argument("--lanes-root", type=Path, default=dp.DEFAULT_LANES_ROOT,
+                        help="ADR-B007 lane worktree root (sibling to the "
+                             "clone; default /srv/company/lanes)")
     mode = parser.add_mutually_exclusive_group(required=True)
     mode.add_argument("--once", action="store_true")
     mode.add_argument("--daemon", action="store_true")
@@ -388,34 +434,37 @@ def main(argv: list[str] | None = None) -> int:
     args = parser.parse_args(argv)
 
     if args.once:
-        return report(args.repo_root)
+        return report(args.repo_root, args.lanes_root)
     if args.dispatch_once:
         if not (args.project and args.task):
             parser.error("--dispatch-once requires --project and --task")
         return dispatch_once(args.repo_root, args.project, args.task,
-                             args.live, workspace=args.workspace)
+                             args.live, workspace=args.workspace,
+                             lanes_root=args.lanes_root)
     if args.harvest_once:
         if not (args.project and args.task and args.workspace):
             parser.error("--harvest-once requires --project, --task, "
                          "--workspace")
         return harvest_once(args.repo_root, args.project, args.task,
-                            args.workspace, slug=args.slug)
+                            args.workspace, slug=args.slug,
+                            lanes_root=args.lanes_root)
     if args.transition:
         if not (args.project and args.task and args.to
                 and args.evidence is not None):
             parser.error("--transition requires --project, --task, --to, "
                          "--evidence")
         return transition_once(args.repo_root, args.project, args.task,
-                               args.to, args.evidence)
+                               args.to, args.evidence,
+                               lanes_root=args.lanes_root)
     if args.process_review:
         if not (args.project and args.approver and args.reference):
             parser.error("--process-review requires --project, --approver, "
                          "--reference")
         body = sys.stdin.read()
         return process_review(args.repo_root, args.project, args.approver,
-                              args.reference, body)
+                              args.reference, body, lanes_root=args.lanes_root)
     while True:  # --daemon
-        report(args.repo_root)
+        report(args.repo_root, args.lanes_root)
         time.sleep(args.interval)
 
 

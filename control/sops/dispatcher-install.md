@@ -55,6 +55,9 @@ already covers it — verify, then delete this line).
 # 1. user + directories
 useradd --system --create-home --home-dir /srv/company --shell /usr/sbin/nologin dispatcher || true
 install -d -o dispatcher -g dispatcher /srv/company
+# ADR-B007: state-lane worktrees live SIBLING to the clone, dispatcher-owned
+# (never nested inside /srv/company/repo — nested trees contaminate scans).
+install -d -o dispatcher -g dispatcher /srv/company/lanes
 
 # 2. checkout + venv (as dispatcher)
 sudo -u dispatcher git clone https://github.com/msomali/company /srv/company/repo || \
@@ -479,35 +482,38 @@ The dispatcher harvests, CI opens the PR as the bot, role workspaces stay
 credential-free. Implementation: `control/scripts/harvest.py`,
 `--harvest-once`, `.github/workflows/delivery.yml` (PR #103).
 
-### Code vintage — the clone runs what is checked out (owner finding 1, 2026-07-23)
+### Code vintage — the clone stays on main (owner finding 1, 2026-07-23; ADR-B007)
 
-State-lane operations (TaskBranchCommitter) deliberately leave
-`/srv/company/repo` checked out on `dispatch/TASK-###`. That checkout is
-ALSO the code every owner-invoked command — and the daemon at start —
-executes: on a branch minted before a tooling change, `control/scripts/`
-REVERTS to the branch's vintage. Bit live 2026-07-23: the legacy
-`dispatch/TASK-003` (minted before TaskBranchCommitter existed) carried
-scripts with no harvest at all; the owner hand-synced main into the branch
-(commit 046f) to run anything. Two rules:
+**Resolved structurally by ADR-B007 (PR #128/#131): the branch switch is
+retired.** State-lane operations no longer switch `/srv/company/repo` to
+`dispatch/TASK-###` — each task's state lives in a sibling worktree at
+`/srv/company/lanes/TASK-###` (`TaskLane`), and the clone's own checkout is
+never touched. So the clone's `control/scripts/` cannot revert to a branch's
+vintage: no state operation changes the clone's checkout. (The original bite,
+2026-07-23: legacy `dispatch/TASK-003`, minted before `TaskBranchCommitter`,
+carried scripts with no harvest; the owner hand-synced main — commit `046f` —
+to run anything. That failure mode is now impossible.)
 
-1. **Before ANY owner-invoked runtime command**, put the clone back on
-   current main:
+What remains is simple hygiene, not a per-command dance:
+
+1. **Keep the clone on current main:**
 
    ```bash
-   sudo -u dispatcher git -C /srv/company/repo switch main
+   sudo -u dispatcher git -C /srv/company/repo switch main   # one-time, if not already
    sudo -u dispatcher git -C /srv/company/repo pull --ff-only
    ```
 
-   After repo updates or state-lane work, restart the daemon with the clone
-   on main (`systemctl restart company-dispatcher.service`) — systemd reads
-   the checkout as it is.
-2. Branches MINTED by TaskBranchCommitter base on freshly **fetched
-   origin/main** (pinned by `tests/test_branch_vintage.py`), so a new
-   dispatch branch starts at today's scripts and legacy-style staleness
-   cannot recur at creation. But the branch FREEZES there — a long-lived
-   task lags as main advances (also pinned by test), and reused branches
-   are never rebased. Rule 1 is therefore unconditional, not a
-   legacy-branch special case.
+   The clone is code-only; the daemon and every owner-invoked command run
+   current tooling from it. After a repo update, `pull --ff-only` then
+   `systemctl restart company-dispatcher.service`.
+2. Lane worktrees MINTED by `TaskLane` base on freshly **fetched
+   origin/main** (pinned by `tests/test_branch_vintage.py` and
+   `test_task_lane.py`), so a new lane starts at today's scripts. A lane
+   FREEZES at its creation vintage — a long-lived task's worktree lags as
+   main advances (pinned by test); this is harmless because the lane holds
+   only that task's episode state, and the CODE the runtime executes always
+   comes from the clone (on main), never the lane. Lanes are pruned at close
+   (Episode close, below), so staleness never accumulates.
 
 ### Envelope-author rule (binding requirement 3)
 
@@ -644,8 +650,10 @@ sudo -u dispatcher bash -c 'set -a; . /etc/company/dispatcher.env; set +a; \
 ### Episode close — walking a delivered task to CLOSED (owner-invoked)
 
 After the delivery PR merges, the §82.4 walk is three legs — all commands
-run from the clone ON CURRENT MAIN first (Code vintage rule 1 above), all
-writes land on `dispatch/TASK-###`:
+The clone stays on main (Code vintage above); the runtime resolves each
+task's `task_dir` into its lane worktree at `/srv/company/lanes/TASK-###`
+(ADR-B007), so all reads and writes land there and on `dispatch/TASK-###`
+automatically — no branch switching, no manual pathing:
 
 ```bash
 RT='sudo -u dispatcher bash -c'
@@ -680,18 +688,22 @@ $RT "$RUN --process-review --project PROJECT-000 \
 # OPERATIONS_AND_FEEDBACK, CLOSED; evidence: merge sha / verification note /
 # cost+feedback note).
 
-# COLLECT — manifest + completeness, committed to the dispatch lane:
+# COLLECT — run the collector against the LANE WORKTREE (ADR-B007). The
+# default --verify-refs requires every attested gate record to be TRACKED
+# ON A REF (committed), not merely present on disk — the #122 defect made
+# detectable. The manifest lands in, and is committed to, the lane:
+LANE=/srv/company/lanes/TASK-00N
+EP=$LANE/projects/PROJECT-000/episodes/TASK-00N
 sudo -u dispatcher /srv/company/venv/bin/python \
-  /srv/company/repo/control/scripts/episode_collector.py \
-  /srv/company/repo/projects/PROJECT-000/episodes/TASK-00N
+  /srv/company/repo/control/scripts/episode_collector.py "$EP"
 sudo -u dispatcher /srv/company/venv/bin/python \
-  /srv/company/repo/control/scripts/episode_collector.py \
-  /srv/company/repo/projects/PROJECT-000/episodes/TASK-00N --check
-sudo -u dispatcher git -C /srv/company/repo add \
+  /srv/company/repo/control/scripts/episode_collector.py "$EP" --check
+# commit the manifest ON THE LANE (the worktree is the state home now):
+sudo -u dispatcher git -C "$LANE" add \
   projects/PROJECT-000/episodes/TASK-00N/manifest.yaml
-sudo -u dispatcher git -C /srv/company/repo commit -m \
+sudo -u dispatcher git -C "$LANE" commit -m \
   "TASK-00N: episode manifest (B4.4 collector)"
-sudo -u dispatcher git -C /srv/company/repo push origin dispatch/TASK-00N
+sudo -u dispatcher git -C "$LANE" push origin dispatch/TASK-00N
 # (transcripts: while live spawns log no model_usage events — metering
 # wiring is §82.8 — §9 completeness does not demand transcripts; archiving
 # the session transcript under transcripts/ anyway follows the TASK-001
@@ -699,7 +711,14 @@ sudo -u dispatcher git -C /srv/company/repo push origin dispatch/TASK-00N
 
 # LAND — episode state enters main via PR like everything else: bootstrap
 # opens the PR from dispatch/TASK-00N (pr_open.py, ten-section body), the
-# owner reviews/merges. Then: Code vintage rule 1 — clone back to main.
+# owner reviews/merges.
+
+# PRUNE — after the episode PR merges, retire the lane worktree (ADR-B007
+# TaskLane.remove; git worktree prune clears its metadata). The clone stays
+# on main throughout:
+sudo -u dispatcher git -C /srv/company/repo worktree remove --force "$LANE"
+sudo -u dispatcher git -C /srv/company/repo worktree prune
+sudo -u dispatcher git -C /srv/company/repo pull --ff-only   # pick up the merge
 ```
 
 Gate-edge discipline (owner ruling 2026-07-23, structural): `--transition`

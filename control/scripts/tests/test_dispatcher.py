@@ -394,3 +394,18 @@ def test_native_charter_keeps_tier(world):
     d.transition(td, "DEPLOYMENT", evidence="release approved")
     task = yaml.safe_load((td / "task.yaml").read_text())
     assert task["tier"] == "T1"
+
+
+# -- ADR-B007 PR 2: task_dir resolves through the lane worktree when present -
+
+def test_task_dir_prefers_lane_worktree_when_present(tmp_path):
+    lanes = tmp_path / "lanes"
+    d = dp.Dispatcher(repo_root=tmp_path / "repo", backend=None,
+                      committer=object(), lanes_root=lanes)
+    # no lane yet → clone tree
+    assert d.task_dir("PROJECT-000", "TASK-5") == \
+        tmp_path / "repo/projects/PROJECT-000/episodes/TASK-5"
+    # lane worktree exists → reads/writes resolve there
+    (lanes / "TASK-5").mkdir(parents=True)
+    assert d.task_dir("PROJECT-000", "TASK-5") == \
+        lanes / "TASK-5/projects/PROJECT-000/episodes/TASK-5"

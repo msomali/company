@@ -404,3 +404,46 @@ def test_process_review_still_walks_gate_edges(world, capsys, monkeypatch):
     td = root / "projects/PROJECT-000/episodes" / task_id
     assert yaml.safe_load((td / "state.yaml").read_text())["state"] == \
         "SECURITY_REVIEW"
+
+
+# -- scan union: lane-authoritative + divergence WARN (ADR-B007 PR 2) --------
+
+def _lane_state(lanes_root, task_id, state, project="PROJECT-000"):
+    sf = (lanes_root / task_id / "projects" / project / "episodes" / task_id
+          / "state.yaml")
+    sf.parent.mkdir(parents=True, exist_ok=True)
+    sf.write_text(yaml.safe_dump(
+        {"task_id": task_id, "state": state, "run_id": None,
+         "rejection_cycles": 0}))
+
+
+def test_scan_reports_union_lane_authoritative(world, tmp_path):
+    root, task_id = world               # task_id lives in the clone at INTAKE
+    lanes = tmp_path / "lanes"
+    _lane_state(lanes, task_id, "IMPLEMENTATION")   # same task, advanced lane
+    _lane_state(lanes, "TASK-090", "DISCOVERY")     # lane-only task
+    rows, warnings = rt.scan(root, lanes)
+    by = {r["task"]: r for r in rows}
+    assert by[task_id]["state"] == "IMPLEMENTATION"   # lane wins
+    assert by[task_id]["source"] == "lane"
+    assert by["TASK-090"]["source"] == "lane"
+    # divergence (clone INTAKE vs lane IMPLEMENTATION) is a loud WARN
+    assert any(task_id in w and "diverges" in w for w in warnings)
+
+
+def test_scan_clone_only_when_no_lane(world, tmp_path):
+    root, task_id = world
+    rows, warnings = rt.scan(root, tmp_path / "empty-lanes")
+    assert [r["source"] for r in rows] == ["main"]
+    assert warnings == []
+
+
+def test_once_prints_divergence_warning(world, tmp_path, capsys):
+    root, task_id = world
+    lanes = tmp_path / "lanes"
+    _lane_state(lanes, task_id, "DESIGN")
+    assert rt.main(["--once", "--repo-root", str(root),
+                    "--lanes-root", str(lanes)]) == 0
+    out = capsys.readouterr().out
+    assert "WARN scan-divergence" in out
+    assert f"{task_id}: DESIGN" in out and "[lane]" in out
