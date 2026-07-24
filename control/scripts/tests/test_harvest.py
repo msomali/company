@@ -211,7 +211,9 @@ class FakeGit:
 
 def test_git_harvester_sequence_and_provenance(tmp_path):
     fake = FakeGit()
-    h = hv.GitHarvester(repo_root=tmp_path, runner=fake, push=True)
+    lanes = tmp_path / "lanes"
+    h = hv.GitHarvester(repo_root=tmp_path, runner=fake, push=True,
+                        lanes_root=lanes)
     items = [hv.Collected("src/mod.py", tmp_path / "x", b"x = 1\n")]
     sha = h.deliver(branch="sde/TASK-9", items=items,
                     handoff_rel="projects/P/episodes/TASK-9/handoff.md",
@@ -227,10 +229,12 @@ def test_git_harvester_sequence_and_provenance(tmp_path):
     assert push[-1] == "sde/TASK-9"
     # worktree is always removed, success or not
     assert any("worktree" in c and "remove" in c for c in fake.calls)
-    # files were materialized into the worktree before add
-    wt = tmp_path / ".delivery-worktrees" / "sde-TASK-9"
+    # ADR-B007: delivery worktree lives OUTSIDE the clone, under the shared
+    # lanes root (/srv/company/lanes/.delivery/), never in-repo.
+    wt = lanes / ".delivery" / "sde-TASK-9"
     assert (wt / "src/mod.py").read_bytes() == b"x = 1\n"
     assert (wt / "projects/P/episodes/TASK-9/handoff.md").read_text() == "body"
+    assert not (tmp_path / ".delivery-worktrees").exists()
 
 
 # -- unreadable inputs refuse, never crash (finding 3, req-1 gap) ------------

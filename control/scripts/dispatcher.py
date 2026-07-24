@@ -34,6 +34,16 @@ REPO_ROOT = Path(__file__).resolve().parents[2]
 MANIFEST_DIR = REPO_ROOT / "control" / "manifests"
 DIGEST_PATH = REPO_ROOT / "company" / "digest-v1.1.md"
 
+# ADR-B007: the state lane is a persistent git worktree SIBLING to the clone,
+# never nested inside it (nested trees contaminate scans — the PR #122
+# gate-records gap). One root, shared with the delivery worktrees
+# (harvest.py imports this). Production layout: clone at /srv/company/repo,
+# lanes at /srv/company/lanes/TASK-### — same owner (dispatcher:dispatcher).
+DEFAULT_LANES_ROOT = Path("/srv/company/lanes")
+# State/episode commits are dispatcher-authored (§80.5 infrastructure lane).
+DISPATCHER_NAME = "dispatcher"
+DISPATCHER_EMAIL = "dispatcher@company.local"
+
 # ---------------------------------------------------------------- state machine
 
 # Appendix A reference workflow. Forward edges; review states loop through
@@ -102,66 +112,156 @@ class GitCommitter:
         )
 
 
-class TaskBranchCommitter(GitCommitter):
-    """GitCommitter pinned to an explicit branch (the dispatch/TASK-### lane).
+class LaneError(RuntimeError):
+    """Task-lane worktree operation failed (git/infrastructure defect)."""
 
-    Root-cause fix (owner finding 2, 2026-07-22): live dispatch committed to
-    whatever branch the clone happened to have checked out (local ``main`` —
-    unpushable; protection applies to everyone). State/episode commits now
-    create-or-target their task's ``dispatch/TASK-###`` branch explicitly and
-    push via the clone's ambient deploy key (B4.3 install — no tokens here).
-    New branches base on ``origin/main`` when fetchable (WARN + local ``main``
-    otherwise) — never on another task's branch, so lanes cannot cross.
-    Uncommitted task files ride the switch by design; a conflicting switch
-    fails loudly rather than committing to the wrong lane.
+
+@dataclass
+class TaskLane:
+    """ADR-B007 persistent state-lane worktree for one task.
+
+    ``dispatch/TASK-###`` materializes at ``<lanes_root>/TASK-###`` — a git
+    worktree SIBLING to the clone, never inside it. Reads and writes both
+    resolve here (PR 2 wires the reads); the clone's own checkout is NEVER
+    switched — which retires the branch-vintage finding (owner finding 1,
+    2026-07-23) at its root: no state operation can revert the clone's
+    ``control/scripts`` to a branch's tooling because no state operation
+    touches the clone's checkout. Brand-new lanes base on freshly fetched
+    ``origin/main`` (the vintage property pinned by test_branch_vintage
+    carries over); an existing local/remote branch is attached as-is.
+
+    Provenance unchanged (§80.5): commits are dispatcher-authored, pushed via
+    the clone's ambient deploy key (B4.3 install — no tokens here). Injectable
+    runner keeps tests offline. Modeled on GitHarvester's proven delivery
+    worktree (PR #103), made PERSISTENT for the episode's life (``remove()``
+    prunes it in the close runbook, PR 2).
     """
 
-    def __init__(self, repo_root: Path, branch: str, push: bool = True,
-                 runner=None):
-        super().__init__(repo_root)
-        self.branch = branch
-        self.push = push
-        self.runner = runner or self._run
+    repo_root: Path
+    branch: str
+    lanes_root: Path = DEFAULT_LANES_ROOT
+    push: bool = True
+    runner: object = None
 
-    def _run(self, argv: list[str]):
-        proc = subprocess.run(argv, capture_output=True, text=True,
-                              timeout=300)
+    def __post_init__(self):
+        self.repo_root = Path(self.repo_root)
+        self.lanes_root = Path(self.lanes_root)
+        self.runner = self.runner or self._default_runner
+
+    @staticmethod
+    def _default_runner(argv: list[str], cwd: Path):
+        proc = subprocess.run(argv, cwd=str(cwd), capture_output=True,
+                              text=True, timeout=300)
         return proc.returncode, proc.stdout or "", proc.stderr or ""
 
-    def _git(self, *args: str, check: bool = True):
-        rc, out, err = self.runner(["git", "-C", str(self.repo_root), *args])
+    @property
+    def path(self) -> Path:
+        """The lane worktree: <lanes_root>/<last branch segment>."""
+        return self.lanes_root / self.branch.split("/")[-1]
+
+    def _git(self, *args: str, cwd: Path | None = None, check: bool = True):
+        rc, out, err = self.runner(["git", *args], cwd or self.repo_root)
         if check and rc != 0:
-            raise RuntimeError(
-                f"git {' '.join(args[:2])}… failed ({rc}) on branch-pinned "
-                f"commit lane {self.branch!r}: {err.strip()[:300]}"
+            raise LaneError(
+                f"git {' '.join(args[:2])}… failed ({rc}) on task-lane "
+                f"{self.branch!r}: {err.strip()[:300]}"
             )
         return rc, out, err
 
-    def _ensure_branch(self) -> None:
-        _, out, _ = self._git("rev-parse", "--abbrev-ref", "HEAD")
-        if out.strip() == self.branch:
-            return
+    def ensure(self) -> Path:
+        """Materialize the lane worktree if absent (persistent: a present
+        worktree is reused). Returns the worktree path."""
+        if self.path.exists():
+            return self.path
+        self.lanes_root.mkdir(parents=True, exist_ok=True)
         rc, _, _ = self._git("rev-parse", "--verify", "--quiet",
                              f"refs/heads/{self.branch}", check=False)
         if rc == 0:
-            self._git("switch", self.branch)
-            return
-        base = "main"
-        rc, _, _ = self._git("fetch", "origin", "main", check=False)
+            self._git("worktree", "add", str(self.path), self.branch)
+            return self.path
+        rc, _, _ = self._git("rev-parse", "--verify", "--quiet",
+                             f"refs/remotes/origin/{self.branch}", check=False)
         if rc == 0:
-            base = "origin/main"
-        else:
-            print(f"WARN dispatch-branch: fetch origin/main failed; basing "
+            self._git("worktree", "add", "-B", self.branch, str(self.path),
+                      f"origin/{self.branch}")
+            return self.path
+        # Brand-new lane: base on freshly fetched origin/main; loudly fall
+        # back to local main (the vintage-immunity property, test-pinned).
+        rc, _, _ = self._git("fetch", "origin", "main", check=False)
+        base = "origin/main"
+        if rc != 0:
+            print(f"WARN task-lane: fetch origin/main failed; basing "
                   f"{self.branch} on local 'main'")
-        self._git("switch", "-c", self.branch, base)
+            base = "main"
+        self._git("worktree", "add", "-b", self.branch, str(self.path), base)
+        return self.path
+
+    def commit_blobs(self, sources: dict[str, bytes], message: str) -> str:
+        """Write ``{repo_rel_path: bytes}`` into the lane worktree, commit
+        (dispatcher-authored), push. Returns the commit sha. The bytes are
+        the source of truth — the caller reads them from wherever the runtime
+        currently writes state (the clone tree in PR 1; the lane worktree
+        itself in PR 2, where this becomes a same-file no-op copy)."""
+        if not sources:
+            raise LaneError("commit_blobs: nothing to commit (empty sources)")
+        wt = self.ensure()
+        for rel, data in sources.items():
+            dest = wt / rel
+            dest.parent.mkdir(parents=True, exist_ok=True)
+            dest.write_bytes(data)
+        self._git("add", "--", *sources.keys(), cwd=wt)
+        self._git(
+            "-c", f"user.name={DISPATCHER_NAME}",
+            "-c", f"user.email={DISPATCHER_EMAIL}",
+            "commit", "-m", message, cwd=wt,
+        )
+        sha = self._git("rev-parse", "HEAD", cwd=wt)[1].strip()
+        if self.push:
+            self._git("push", "-u", "origin", self.branch, cwd=wt)
+        return sha
+
+    def remove(self) -> None:
+        """Prune the lane worktree (close runbook, PR 2). Idempotent."""
+        if self.path.exists():
+            self._git("worktree", "remove", "--force", str(self.path),
+                      check=False)
+        self._git("worktree", "prune", check=False)
+
+
+class TaskBranchCommitter(GitCommitter):
+    """Commits episode/state changes onto the task's ``dispatch/TASK-###``
+    lane — the branch SWITCH retires (ADR-B007).
+
+    Prior behavior (owner finding 2, 2026-07-22) switched the clone's own
+    checkout to the lane branch to commit, which is the branch-vintage
+    finding's root (owner finding 1, 2026-07-23): the clone's tooling
+    reverted to whatever branch it sat on. Now commits land in the task's
+    persistent lane WORKTREE (``TaskLane``) sibling to the clone; the clone's
+    checkout is never disturbed.
+
+    Runtime contract preserved: ``commit(paths, message)`` where ``paths``
+    are repo_root-relative working-tree files. The committer ferries their
+    CURRENT content into the lane worktree and commits there — a copy, so the
+    clone's readable state is never removed (PR 1 keeps reads coherent while
+    reads still come from the clone). In ADR-B007 PR 2, ``task_dir`` resolves
+    into the lane worktree directly, the ferried paths already live there,
+    and this copy collapses to a no-op.
+    """
+
+    def __init__(self, repo_root: Path, branch: str, push: bool = True,
+                 runner=None, lanes_root: Path = DEFAULT_LANES_ROOT):
+        super().__init__(repo_root)
+        self.branch = branch
+        self.push = push
+        self.lane = TaskLane(repo_root=repo_root, branch=branch,
+                             lanes_root=lanes_root, push=push, runner=runner)
 
     def commit(self, paths: list[Path], message: str) -> None:
-        self._ensure_branch()
-        rels = [str(p.relative_to(self.repo_root)) for p in paths]
-        self._git("add", *rels)
-        self._git("commit", "-m", message)
-        if self.push:
-            self._git("push", "-u", "origin", self.branch)
+        sources = {
+            str(Path(p).relative_to(self.repo_root)): Path(p).read_bytes()
+            for p in paths
+        }
+        self.lane.commit_blobs(sources, message)
 
 
 @dataclass
