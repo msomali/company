@@ -1,0 +1,29 @@
+{"at": "2026-07-22T23:32:28Z", "event": "dispatch", "role": "SDE", "run_id": "agent:sde:task-003-20260722t233135z-790e74"}
+{"at": "2026-07-23T05:13:45Z", "event": "dispatch", "role": "SDE", "run_id": "agent:sde:task-003-20260723t051215z-ee99f7"}
+{"at": "2026-07-23T05:27:00Z", "event": "dispatch", "role": "SDE", "run_id": "agent:sde:task-003-20260723t052559z-0d4ff0"}
+{"at": "2026-07-23T18:43:43Z", "event": "harvest_refused", "reason": "handoff.md fails handoff_check (dispatcher-side pre-validation; CI is the backstop, not the first gate): role claim: branch 'sde/TASK-003-titlecase' is bot-role work (sde/) but the PR body has no machine-readable gate-role claim \u2014 add a line beginning with the word 'role:' followed by one of SAT, SSE, DPC, DCE, PJM, HUMAN. Under ADR-B000 the author-bot cannot review its own PR, so the PR body is the only claim channel gate-writer can parse (\u00a786-C6, MEM-ORG-0004)"}
+{"at": "2026-07-23T18:48:19Z", "event": "dispatch", "role": "SDE", "run_id": "agent:sde:task-003-20260723t184727z-0bd578"}
+{"at": "2026-07-23T18:49:22Z", "branch": "sde/TASK-003-titlecase", "event": "harvest_pushed", "files": ["projects/PROJECT-000/src/titlecase_id.py", "projects/PROJECT-000/tests/test_titlecase_id.py", "projects/PROJECT-000/episodes/TASK-003/handoff.md"], "sha": "3cbf7a4ed9aa9ce6b104e0bee96e88402df1df4c"}
+{"at": "2026-07-23T19:42:27Z", "event": "dispatch", "role": "SDE", "run_id": "agent:sde:task-003-20260723t194153z-99f7ac"}
+{"at": "2026-07-23T19:44:00Z", "branch": "sde/TASK-003-titlecase", "event": "harvest_pushed", "files": ["projects/PROJECT-000/src/titlecase_id.py", "projects/PROJECT-000/tests/test_titlecase_id.py", "projects/PROJECT-000/episodes/TASK-003/handoff.md"], "sha": "26768085804f48b74615d4cf8d4e66154defe034"}
+{"at": "2026-07-23T23:43:57Z", "event": "transition", "evidence": "envelope task.yaml on dispatch/TASK-003; PROJECT-000 charter scope", "frm": "INTAKE", "to": "DISCOVERY"}
+{"at": "2026-07-23T23:43:59Z", "event": "transition", "evidence": "acceptance criteria in amended envelope, commits 9b8f17b..b998b5d (iteration scopes 2-5)", "frm": "DISCOVERY", "to": "REQUIREMENTS"}
+{"at": "2026-07-23T23:44:01Z", "event": "transition", "evidence": "single-function design per envelope; walking-skeleton precedent TASK-001", "frm": "REQUIREMENTS", "to": "DESIGN"}
+{"at": "2026-07-23T23:44:03Z", "event": "transition", "evidence": "ADR-B006 delivery path (PR #102); dispatch+harvest cycle plan", "frm": "DESIGN", "to": "DELIVERY_PLAN"}
+{"at": "2026-07-23T23:44:05Z", "event": "transition", "evidence": "delivery PR #112 merged f3ad550; all four CI checks green on sde/TASK-003-titlecase", "frm": "DELIVERY_PLAN", "to": "IMPLEMENTATION"}
+{"at": "2026-07-23T23:44:07Z", "event": "transition", "evidence": "tests 24/24 in-sandbox, independently verified via docker exec; handoff section 6 self-review", "frm": "IMPLEMENTATION", "to": "QUALITY_REVIEW"}
+{"approver": "msomali", "at": "2026-07-23T23:46:51Z", "decision": "APPROVED", "event": "gate_decision", "gate": "SAT", "record": "GATE-TASK-003-SAT-1.yaml"}
+{"at": "2026-07-23T23:46:51Z", "event": "transition", "evidence": "SAT gate APPROVED by @msomali: https://github.com/msomali/company/pull/112", "frm": "QUALITY_REVIEW", "to": "SECURITY_REVIEW"}
+{"approver": "msomali", "at": "2026-07-23T23:46:54Z", "decision": "APPROVED", "event": "gate_decision", "gate": "SSE", "record": "GATE-TASK-003-SSE-1.yaml"}
+{"at": "2026-07-23T23:46:54Z", "event": "transition", "evidence": "SSE gate APPROVED by @msomali: https://github.com/msomali/company/pull/112", "frm": "SECURITY_REVIEW", "to": "PRIVACY_COMPLIANCE_REVIEW"}
+{"approver": "msomali", "at": "2026-07-23T23:46:56Z", "decision": "APPROVED", "event": "gate_decision", "gate": "DPC", "record": "GATE-TASK-003-DPC-1.yaml"}
+{"at": "2026-07-23T23:46:56Z", "event": "transition", "evidence": "DPC gate APPROVED by @msomali: https://github.com/msomali/company/pull/112", "frm": "PRIVACY_COMPLIANCE_REVIEW", "to": "PRODUCTION_READINESS"}
+{"approver": "msomali", "at": "2026-07-23T23:46:57Z", "decision": "APPROVED", "event": "gate_decision", "gate": "DCE", "record": "GATE-TASK-003-DCE-1.yaml"}
+{"at": "2026-07-23T23:46:57Z", "event": "transition", "evidence": "DCE gate APPROVED by @msomali: https://github.com/msomali/company/pull/112", "frm": "PRODUCTION_READINESS", "to": "PRODUCT_ACCEPTANCE"}
+{"approver": "msomali", "at": "2026-07-23T23:46:59Z", "decision": "APPROVED", "event": "gate_decision", "gate": "PJM", "record": "GATE-TASK-003-PJM-1.yaml"}
+{"at": "2026-07-23T23:46:59Z", "event": "transition", "evidence": "PJM gate APPROVED by @msomali: https://github.com/msomali/company/pull/112", "frm": "PRODUCT_ACCEPTANCE", "to": "HUMAN_RELEASE_AUTHORIZATION"}
+{"approver": "msomali", "at": "2026-07-23T23:47:01Z", "decision": "APPROVED", "event": "gate_decision", "gate": "HUMAN", "record": "GATE-TASK-003-HUMAN-1.yaml"}
+{"at": "2026-07-23T23:47:01Z", "event": "transition", "evidence": "HUMAN gate APPROVED by @msomali: https://github.com/msomali/company/pull/112", "frm": "HUMAN_RELEASE_AUTHORIZATION", "to": "DEPLOYMENT"}
+{"at": "2026-07-23T23:48:47Z", "event": "transition", "evidence": "delivery merged to main f3ad550; artifacts live at projects/PROJECT-000/src|tests; post-merge CI green on main", "frm": "DEPLOYMENT", "to": "PRODUCTION_VERIFICATION"}
+{"at": "2026-07-23T23:48:49Z", "event": "transition", "evidence": "first live task through ADR-B006 path: 5 agent turns (28.9-95s), 2 harvests, cost within $1 cap; findings consolidated into PRs #113-#116", "frm": "PRODUCTION_VERIFICATION", "to": "OPERATIONS_AND_FEEDBACK"}
+{"at": "2026-07-23T23:48:51Z", "event": "transition", "evidence": "episode complete: envelope, state history, 6 gate records, delivery PR #112, handoff; TASK-003 done", "frm": "OPERATIONS_AND_FEEDBACK", "to": "CLOSED"}

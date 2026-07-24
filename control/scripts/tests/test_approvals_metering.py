@@ -315,3 +315,43 @@ def test_slot_idempotent_per_task(world):
     pool = mt.SessionPool(policies_path=root / "control/models/policies.yaml")
     assert pool.request("TASK-001") and pool.request("TASK-001")
     assert len(pool.active) == 1
+
+
+# -- gate record commits (TASK-003 close finding, 2026-07-23) ----------------
+
+def test_gate_record_file_committed_with_decision(world):
+    """The record file itself must enter the commit lane — previously only
+    state.yaml/log.jsonl (via transition) were committed and the record
+    dangled in the working tree (TASK-003's six needed an owner push)."""
+    root, d, cap, task_id, td = world
+    advance(d, td, *TO_QUALITY)
+    committer = d.committer
+    n_before = len(committer.commits)
+    record_path = cap.apply("PROJECT-000", ap.Decision(
+        "APPROVE", task_id, "SAT", "msomali", "PR#9-review-1"))
+    new = committer.commits[n_before:]
+    record_commits = [(paths, msg) for paths, msg in new
+                      if record_path in paths]
+    assert record_commits, "gate record file never committed"
+    paths, msg = record_commits[0]
+    record = yaml.safe_load(record_path.read_text())
+    assert record["gate_id"] in msg and "APPROVED" in msg
+    # Order: record commit lands BEFORE the transition commit — a crash
+    # between the two must leave a recorded decision, never an unrecorded
+    # transition.
+    transition_idx = next(i for i, (p, m) in enumerate(new) if "→" in m)
+    record_idx = next(i for i, (p, m) in enumerate(new)
+                      if record_path in p)
+    assert record_idx < transition_idx
+
+
+def test_reject_record_also_committed(world):
+    root, d, cap, task_id, td = world
+    advance(d, td, *TO_QUALITY)
+    committer = d.committer
+    n_before = len(committer.commits)
+    record_path = cap.apply("PROJECT-000", ap.Decision(
+        "REJECT", task_id, "SAT", "msomali", "PR#9"))
+    new = committer.commits[n_before:]
+    assert any(record_path in paths for paths, _ in new)
+    assert any("REJECTED" in msg for _, msg in new)
