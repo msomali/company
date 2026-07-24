@@ -1,0 +1,17 @@
+# Gate Decision Record (v2 §8) — emitted by gate-writer (B5.2)
+gate_id: GATE-HUMAN-PR122-2460ba62
+artifact_or_release: 'PR #122: TASK-003: episode record — INTAKE → CLOSED (first live
+  ADR-B006 cycle)'
+gate_owner: HUMAN
+decision: APPROVED
+criteria_version: v2§8/v1§15 handoff rev 1
+evidence:
+- https://github.com/msomali/company/pull/122
+- https://github.com/msomali/company/pull/122#pullrequestreview-4770098702
+- merge:2460ba62ef57439aaa817488a0e15372e3ac1dcf
+findings: []
+conditions: []
+expires: null
+next_owner: Human owner (@msomali) — records push, review, merge.
+decided_at: '2026-07-24T04:28:24Z'
+approval_message_ref: https://github.com/msomali/company/pull/122#pullrequestreview-4770098702

@@ -1,0 +1,75 @@
+task_id: TASK-003
+state: CLOSED
+run_id: agent:sde:task-003-20260723t194153z-99f7ac
+iteration_count: 5
+rejection_cycles: 0
+history:
+- at: '2026-07-21T23:49:42Z'
+  from: NONE
+  to: INTAKE
+  evidence: task-create from envelope-task003-live.yaml
+- at: '2026-07-23T23:43:57Z'
+  from: INTAKE
+  to: DISCOVERY
+  evidence: envelope task.yaml on dispatch/TASK-003; PROJECT-000 charter scope
+- at: '2026-07-23T23:43:59Z'
+  from: DISCOVERY
+  to: REQUIREMENTS
+  evidence: acceptance criteria in amended envelope, commits 9b8f17b..b998b5d (iteration
+    scopes 2-5)
+- at: '2026-07-23T23:44:01Z'
+  from: REQUIREMENTS
+  to: DESIGN
+  evidence: single-function design per envelope; walking-skeleton precedent TASK-001
+- at: '2026-07-23T23:44:03Z'
+  from: DESIGN
+  to: DELIVERY_PLAN
+  evidence: 'ADR-B006 delivery path (PR #102); dispatch+harvest cycle plan'
+- at: '2026-07-23T23:44:05Z'
+  from: DELIVERY_PLAN
+  to: IMPLEMENTATION
+  evidence: 'delivery PR #112 merged f3ad550; all four CI checks green on sde/TASK-003-titlecase'
+- at: '2026-07-23T23:44:07Z'
+  from: IMPLEMENTATION
+  to: QUALITY_REVIEW
+  evidence: tests 24/24 in-sandbox, independently verified via docker exec; handoff
+    section 6 self-review
+- at: '2026-07-23T23:46:51Z'
+  from: QUALITY_REVIEW
+  to: SECURITY_REVIEW
+  evidence: 'SAT gate APPROVED by @msomali: https://github.com/msomali/company/pull/112'
+- at: '2026-07-23T23:46:54Z'
+  from: SECURITY_REVIEW
+  to: PRIVACY_COMPLIANCE_REVIEW
+  evidence: 'SSE gate APPROVED by @msomali: https://github.com/msomali/company/pull/112'
+- at: '2026-07-23T23:46:56Z'
+  from: PRIVACY_COMPLIANCE_REVIEW
+  to: PRODUCTION_READINESS
+  evidence: 'DPC gate APPROVED by @msomali: https://github.com/msomali/company/pull/112'
+- at: '2026-07-23T23:46:57Z'
+  from: PRODUCTION_READINESS
+  to: PRODUCT_ACCEPTANCE
+  evidence: 'DCE gate APPROVED by @msomali: https://github.com/msomali/company/pull/112'
+- at: '2026-07-23T23:46:59Z'
+  from: PRODUCT_ACCEPTANCE
+  to: HUMAN_RELEASE_AUTHORIZATION
+  evidence: 'PJM gate APPROVED by @msomali: https://github.com/msomali/company/pull/112'
+- at: '2026-07-23T23:47:01Z'
+  from: HUMAN_RELEASE_AUTHORIZATION
+  to: DEPLOYMENT
+  evidence: 'HUMAN gate APPROVED by @msomali: https://github.com/msomali/company/pull/112'
+- at: '2026-07-23T23:48:47Z'
+  from: DEPLOYMENT
+  to: PRODUCTION_VERIFICATION
+  evidence: delivery merged to main f3ad550; artifacts live at projects/PROJECT-000/src|tests;
+    post-merge CI green on main
+- at: '2026-07-23T23:48:49Z'
+  from: PRODUCTION_VERIFICATION
+  to: OPERATIONS_AND_FEEDBACK
+  evidence: 'first live task through ADR-B006 path: 5 agent turns (28.9-95s), 2 harvests,
+    cost within $1 cap; findings consolidated into PRs #113-#116'
+- at: '2026-07-23T23:48:51Z'
+  from: OPERATIONS_AND_FEEDBACK
+  to: CLOSED
+  evidence: 'episode complete: envelope, state history, 6 gate records, delivery PR
+    #112, handoff; TASK-003 done'

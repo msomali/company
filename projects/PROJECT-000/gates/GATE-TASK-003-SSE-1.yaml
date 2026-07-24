@@ -1,0 +1,13 @@
+gate_id: GATE-TASK-003-SSE-1
+artifact_or_release: projects/PROJECT-000/src/titlecase_id.py, projects/PROJECT-000/tests/test_titlecase_id.py
+gate_owner: SSE
+decision: APPROVED
+criteria_version: policy-set-v0
+evidence:
+- https://github.com/msomali/company/pull/112
+findings:
+- 'security: gitleaks green on delivery branch; harvest pre-push secret scan passed;
+  sandbox containment held (bridge network, egress ladder); no credentials in workspace'
+next_owner: PRIVACY_COMPLIANCE_REVIEW
+decided_at: '2026-07-23T23:46:54Z'
+approval_message_ref: https://github.com/msomali/company/pull/112

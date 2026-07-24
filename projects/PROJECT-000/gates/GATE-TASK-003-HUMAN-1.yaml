@@ -1,0 +1,13 @@
+gate_id: GATE-TASK-003-HUMAN-1
+artifact_or_release: projects/PROJECT-000/src/titlecase_id.py, projects/PROJECT-000/tests/test_titlecase_id.py
+gate_owner: HUMAN
+decision: APPROVED
+criteria_version: policy-set-v0
+evidence:
+- https://github.com/msomali/company/pull/112
+findings:
+- 'release: owner reviewed and merged delivery PR #112 (f3ad550); episode evidence
+  complete on dispatch/TASK-003'
+next_owner: DEPLOYMENT
+decided_at: '2026-07-23T23:47:01Z'
+approval_message_ref: https://github.com/msomali/company/pull/112
