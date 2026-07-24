@@ -53,6 +53,7 @@ from pathlib import Path
 import yaml
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
+import dispatcher as _dp  # noqa: E402  (DEFAULT_LANES_ROOT; no cycle: dispatcher imports nothing local)
 import frontmatter_lint  # noqa: E402
 import handoff_check  # noqa: E402
 
@@ -303,9 +304,14 @@ class GitHarvester:
     runner: object = field(default=None)
     base_ref: str = "origin/main"
     push: bool = True
+    lanes_root: Path = None
 
     def __post_init__(self):
         self.repo_root = Path(self.repo_root)
+        # ADR-B007: delivery worktrees relocate OUT of the clone to the
+        # shared lanes root (/srv/company/lanes/.delivery/) — same
+        # nested-tree-contamination rationale as the state lanes.
+        self.lanes_root = Path(self.lanes_root or _dp.DEFAULT_LANES_ROOT)
         self.runner = self.runner or default_git_runner
 
     def _git(self, *args: str, cwd: Path | None = None) -> str:
@@ -329,7 +335,8 @@ class GitHarvester:
     ) -> str:
         """Create/refresh ``branch`` from base, write the delivery, commit
         with the ADR-B006 provenance split, push. Returns the commit sha."""
-        wt = self.repo_root / ".delivery-worktrees" / branch.replace("/", "-")
+        wt = self.lanes_root / ".delivery" / branch.replace("/", "-")
+        wt.parent.mkdir(parents=True, exist_ok=True)
         self._git("fetch", "origin", "main")
         if wt.exists():
             self._git("worktree", "remove", "--force", str(wt))

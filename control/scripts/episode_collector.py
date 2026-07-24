@@ -153,6 +153,22 @@ def collect(task_dir: Path, check: bool = False) -> tuple[dict, list[str]]:
             for rel in old.get("files", {}):
                 if rel not in manifest["files"]:
                     problems.append(f"file vanished since collection: {rel}")
+            # ADR-B007 bound requirement: the manifest attests to gate
+            # records, and --check resolves them through THIS tree (the lane
+            # worktree once PR 2 wires the caller). A record the manifest
+            # names but that is absent from this tree fails --check — a
+            # record present only in another tree (the host clone) does not
+            # rescue a lane that lacks it. This is the #122 gap made
+            # detectable: a manifest must never attest to records on no lane
+            # ref. (build_manifest's gate glob is already tree-local, so
+            # freshly collected manifests list only what is present here;
+            # this guards a manifest carried forward against a tree that
+            # since lost a record.)
+            project_dir = task_dir.parents[1]
+            for rel in old.get("gate_records", []):
+                if not (project_dir / rel).is_file():
+                    problems.append(
+                        f"gate record vanished from the lane: {rel}")
         return manifest, problems
     manifest_path.write_text(
         yaml.safe_dump(manifest, sort_keys=False, allow_unicode=True),

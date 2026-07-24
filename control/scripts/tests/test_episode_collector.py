@@ -141,3 +141,44 @@ def test_cli_exit_codes(world, capsys):
     assert ec.main([str(td)]) == 0
     out = capsys.readouterr().out
     assert "complete" in out
+
+
+# -- ADR-B007 bound requirement: --check verifies attested gate records -------
+# -- still exist in THIS tree (the lane once PR 2 wires the caller) -----------
+
+def _seed_gate(root, task_id, gate):
+    gates = root / "projects/PROJECT-000/gates"
+    gates.mkdir(parents=True, exist_ok=True)
+    p = gates / f"GATE-{task_id}-{gate}-1.yaml"
+    p.write_text(yaml.safe_dump({"gate_id": f"GATE-{task_id}-{gate}-1",
+                                 "gate_owner": gate, "decision": "APPROVED"}))
+    return p
+
+
+def test_manifest_lists_gate_records_present_in_this_tree(world):
+    root, task_id, td = world
+    _seed_gate(root, task_id, "SAT")
+    _seed_gate(root, task_id, "HUMAN")
+    manifest, _ = ec.collect(td)
+    assert manifest["gate_records"] == [
+        f"gates/GATE-{task_id}-HUMAN-1.yaml",
+        f"gates/GATE-{task_id}-SAT-1.yaml",
+    ]
+
+
+def test_check_fails_when_attested_gate_record_vanishes(world):
+    root, task_id, td = world
+    sat = _seed_gate(root, task_id, "SAT")
+    ec.collect(td)                                   # manifest attests to SAT
+    sat.unlink()                                     # record leaves this tree
+    _, problems = ec.collect(td, check=True)
+    assert any("gate record vanished from the lane" in p for p in problems)
+    assert any(f"GATE-{task_id}-SAT-1.yaml" in p for p in problems)
+
+
+def test_check_passes_when_attested_gate_records_present(world):
+    root, task_id, td = world
+    _seed_gate(root, task_id, "SAT")
+    ec.collect(td)
+    _, problems = ec.collect(td, check=True)
+    assert problems == []

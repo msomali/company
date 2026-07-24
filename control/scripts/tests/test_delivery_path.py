@@ -13,59 +13,92 @@ import session_backend as sb
 from test_harvest import make_ws, valid_handoff, SpyHarvester
 
 
-# -- TaskBranchCommitter (finding 2) -----------------------------------------
+# -- TaskBranchCommitter (ADR-B007: worktree lane, switch retired) -----------
 
 class FakeGit:
-    def __init__(self, current_branch="main", branch_exists=False,
-                 fetch_ok=True):
+    """Runner(argv, cwd) for the worktree committer. File writes into the
+    lane worktree are real; only git is faked."""
+
+    def __init__(self, head_branch=False, remote_branch=False, fetch_ok=True):
         self.calls = []
-        self.current_branch = current_branch
-        self.branch_exists = branch_exists
+        self.head_branch = head_branch
+        self.remote_branch = remote_branch
         self.fetch_ok = fetch_ok
 
-    def __call__(self, argv):
+    def __call__(self, argv, cwd):
         self.calls.append(argv)
-        joined = " ".join(argv)
-        if "rev-parse --abbrev-ref HEAD" in joined:
-            return 0, self.current_branch + "\n", ""
-        if "rev-parse --verify" in joined:
-            return (0, "", "") if self.branch_exists else (1, "", "")
-        if argv[3] == "fetch":
+        j = " ".join(argv)
+        if "rev-parse --verify --quiet refs/heads/" in j:
+            return (0, "", "") if self.head_branch else (1, "", "")
+        if "rev-parse --verify --quiet refs/remotes/origin/" in j:
+            return (0, "", "") if self.remote_branch else (1, "", "")
+        if argv[1] == "fetch":
             return (0, "", "") if self.fetch_ok else (1, "", "no network")
+        if argv[1:3] == ["rev-parse", "HEAD"]:
+            return 0, "deadbeefcafe1234\n", ""
         return 0, "", ""
 
 
 def _commit(tmp_path, fake):
-    c = dp.TaskBranchCommitter(tmp_path, "dispatch/TASK-9", runner=fake)
-    p = tmp_path / "state.yaml"
+    lanes = tmp_path / "lanes"
+    c = dp.TaskBranchCommitter(tmp_path, "dispatch/TASK-9", runner=fake,
+                               lanes_root=lanes)
+    p = tmp_path / "projects/PROJECT-000/episodes/TASK-9/state.yaml"
+    p.parent.mkdir(parents=True, exist_ok=True)
     p.write_text("x")
     c.commit([p], "msg")
-    return ["\x00".join(call) for call in fake.calls]
+    return ["\x00".join(call) for call in fake.calls], lanes
 
 
-def test_new_branch_based_on_origin_main_then_pushed(tmp_path):
-    flat = _commit(tmp_path, FakeGit(current_branch="main"))
+def test_new_lane_worktree_from_origin_main_then_pushed(tmp_path):
+    flat, lanes = _commit(tmp_path, FakeGit())
+    # brand-new lane: fetch, then worktree add -b from origin/main
     assert any("fetch\x00origin\x00main" in f for f in flat)
-    assert any("switch\x00-c\x00dispatch/TASK-9\x00origin/main" in f for f in flat)
+    assert any(f"worktree\x00add\x00-b\x00dispatch/TASK-9\x00"
+               f"{lanes / 'TASK-9'}\x00origin/main" in f for f in flat)
     assert any("push\x00-u\x00origin\x00dispatch/TASK-9" in f for f in flat)
-
-
-def test_existing_branch_switched_not_recreated(tmp_path):
-    flat = _commit(tmp_path, FakeGit(current_branch="main", branch_exists=True))
-    assert any(f.endswith("switch\x00dispatch/TASK-9") for f in flat)
-    assert not any("switch\x00-c" in f for f in flat)
-
-
-def test_already_on_branch_no_switch(tmp_path):
-    flat = _commit(tmp_path, FakeGit(current_branch="dispatch/TASK-9"))
+    # the CLONE checkout is never switched (retires the branch-vintage root)
     assert not any("switch" in f for f in flat)
+    # ferried content materialized in the lane worktree
+    assert (lanes / "TASK-9/projects/PROJECT-000/episodes/TASK-9/state.yaml"
+            ).read_text() == "x"
+
+
+def test_existing_local_branch_attached_not_recreated(tmp_path):
+    flat, lanes = _commit(tmp_path, FakeGit(head_branch=True))
+    assert any(f"worktree\x00add\x00{lanes / 'TASK-9'}\x00dispatch/TASK-9"
+               in f for f in flat)
+    assert not any("worktree\x00add\x00-b" in f for f in flat)
+    assert not any("switch" in f for f in flat)
+
+
+def test_existing_remote_branch_attached_with_reset(tmp_path):
+    flat, lanes = _commit(tmp_path, FakeGit(remote_branch=True))
+    assert any(f"worktree\x00add\x00-B\x00dispatch/TASK-9\x00"
+               f"{lanes / 'TASK-9'}\x00origin/dispatch/TASK-9" in f
+               for f in flat)
+
+
+def test_present_worktree_reused_no_readd(tmp_path):
+    lanes = tmp_path / "lanes"
+    (lanes / "TASK-9").mkdir(parents=True)          # worktree already present
+    fake = FakeGit()
+    c = dp.TaskBranchCommitter(tmp_path, "dispatch/TASK-9", runner=fake,
+                               lanes_root=lanes)
+    p = tmp_path / "s.yaml"
+    p.write_text("y")
+    c.commit([p], "msg")
+    flat = ["\x00".join(call) for call in fake.calls]
+    assert not any("worktree\x00add" in f for f in flat)   # persistent reuse
     assert any("commit" in f for f in flat)
 
 
-def test_fetch_failure_falls_back_to_local_main_loudly(tmp_path, capsys):
-    flat = _commit(tmp_path, FakeGit(current_branch="main", fetch_ok=False))
-    assert any("switch\x00-c\x00dispatch/TASK-9\x00main" in f for f in flat)
-    assert "WARN dispatch-branch" in capsys.readouterr().out
+def test_new_lane_fetch_failure_falls_back_to_local_main_loudly(tmp_path,
+                                                                capsys):
+    flat, lanes = _commit(tmp_path, FakeGit(fetch_ok=False))
+    assert any(f"worktree\x00add\x00-b\x00dispatch/TASK-9\x00"
+               f"{lanes / 'TASK-9'}\x00main" in f for f in flat)
+    assert "WARN task-lane" in capsys.readouterr().out
 
 
 # -- extract_turn_meta (finding 3) --------------------------------------------
