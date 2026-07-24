@@ -1,0 +1,13 @@
+gate_id: GATE-TASK-003-SAT-1
+artifact_or_release: projects/PROJECT-000/src/titlecase_id.py, projects/PROJECT-000/tests/test_titlecase_id.py
+gate_owner: SAT
+decision: APPROVED
+criteria_version: policy-set-v0
+evidence:
+- https://github.com/msomali/company/pull/112
+findings:
+- 'quality: tests 24/24 in-sandbox (docker exec verified); criterion-mapped test classes;
+  handoff §6 self-review; delivery PR #112 four checks green'
+next_owner: SECURITY_REVIEW
+decided_at: '2026-07-23T23:46:51Z'
+approval_message_ref: https://github.com/msomali/company/pull/112

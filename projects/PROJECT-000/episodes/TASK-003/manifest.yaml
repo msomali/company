@@ -1,0 +1,33 @@
+task_id: TASK-003
+collected_at: '2026-07-23T23:48:53Z'
+final_state: CLOSED
+rejection_cycles: 0
+iteration_count: 5
+files:
+  handoff.md: 63817496d2a247fa4a8428305370247fdfed3803ed5ac2eef592517063fe82b0
+  log.jsonl: 834b103a977327dd5b3e2305ba958c19e292a58336dd1ce17a9e8be6ca3cd3bc
+  state.yaml: d19ed22de6a217c85839a48e4736fa7a7187b826d2ee564b4437b3736b43af32
+  task.yaml: 924d39fb06b00b7c17667a56403776e11268595ec8aa73937b512bdd79e02ac2
+references:
+  pull_requests:
+  - 102
+  - 112
+  ci_runs: []
+gate_records:
+- gates/GATE-TASK-003-DCE-1.yaml
+- gates/GATE-TASK-003-DPC-1.yaml
+- gates/GATE-TASK-003-HUMAN-1.yaml
+- gates/GATE-TASK-003-PJM-1.yaml
+- gates/GATE-TASK-003-SAT-1.yaml
+- gates/GATE-TASK-003-SSE-1.yaml
+completeness:
+  checks:
+    task_envelope: true
+    state_transitions: true
+    action_trace: true
+    cost_tokens: true
+    transcripts: true
+    final_status_recorded: true
+  transcripts: []
+  model_calls: 0
+  complete: true
