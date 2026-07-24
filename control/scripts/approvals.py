@@ -142,6 +142,22 @@ class ApprovalsCapture:
         record = self._gate_record(task_dir, decision)
         record_path = self._write_record(task_dir, decision, record)
 
+        # The record file is committed BEFORE its transition (found at the
+        # TASK-003 close, 2026-07-23): apply() previously committed only
+        # state.yaml + log.jsonl via transition(), so the record existed
+        # solely in the working tree — TASK-001's records reached main only
+        # because §88 drivers committed them by hand, and TASK-003's six
+        # dangled until an owner push. A decision of record that is not IN
+        # the record lane is not a record (v2 §8; §82.5). Order matters:
+        # record commit first, then the transition commit — a crash between
+        # the two leaves an un-transitioned task WITH its decision recorded
+        # (recoverable, honest), never a transitioned task with no record.
+        self.dispatcher.committer.commit(
+            [record_path],
+            f"{decision.task_id}: gate record {record['gate_id']} "
+            f"({record['decision']} by @{decision.approver})",
+        )
+
         if decision.verb == "APPROVE":
             self.dispatcher.transition(
                 task_dir, advance_to,
