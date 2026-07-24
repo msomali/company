@@ -1,0 +1,17 @@
+# Gate Decision Record (v2 §8) — emitted by gate-writer (B5.2)
+gate_id: GATE-HUMAN-PR130-7a78e137
+artifact_or_release: 'PR #130: ADR-B007 impl 2: task_dir via lane, scan union+WARN,
+  task_create commit-at-creation, collector tracked-on-a-ref, SOP'
+gate_owner: HUMAN
+decision: APPROVED
+criteria_version: v2§8/v1§15 handoff rev 1
+evidence:
+- https://github.com/msomali/company/pull/130
+- https://github.com/msomali/company/pull/130#pullrequestreview-4770416408
+- merge:7a78e137fea9b4934a03a4218b38fdd0dd4e2c26
+findings: []
+conditions: []
+expires: null
+next_owner: Human owner (@msomali) — review and merge decision, then unblock TASK-004.
+decided_at: '2026-07-24T05:39:58Z'
+approval_message_ref: https://github.com/msomali/company/pull/130#pullrequestreview-4770416408
