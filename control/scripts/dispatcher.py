@@ -257,10 +257,20 @@ class TaskBranchCommitter(GitCommitter):
                              lanes_root=lanes_root, push=push, runner=runner)
 
     def commit(self, paths: list[Path], message: str) -> None:
-        sources = {
-            str(Path(p).relative_to(self.repo_root)): Path(p).read_bytes()
-            for p in paths
-        }
+        # ADR-B007 PR 2: once task_dir resolves into the lane worktree, the
+        # paths already live there — rel is taken relative to the lane and the
+        # "ferry" (read bytes, write back to the same file) collapses to a
+        # no-op copy before add/commit/push. A path still under the clone
+        # (transitional/edge) is ferried as before. Either way, one code path.
+        lane_root = self.lane.path
+        sources: dict[str, bytes] = {}
+        for p in paths:
+            p = Path(p)
+            if p.is_relative_to(lane_root):
+                rel = str(p.relative_to(lane_root))
+            else:
+                rel = str(p.relative_to(self.repo_root))
+            sources[rel] = p.read_bytes()
         self.lane.commit_blobs(sources, message)
 
 
@@ -329,17 +339,29 @@ class Dispatcher:
     committer: object = None          # must provide commit(paths, message)
     manifest_dir: Path | None = None
     digest_path: Path | None = None
+    lanes_root: Path = DEFAULT_LANES_ROOT
     _manifests: dict = field(default_factory=dict, init=False)
 
     def __post_init__(self):
         self.manifest_dir = self.manifest_dir or self.repo_root / "control/manifests"
         self.digest_path = self.digest_path or self.repo_root / "company/digest-v1.1.md"
+        self.lanes_root = Path(self.lanes_root)
         self.committer = self.committer or GitCommitter(self.repo_root)
 
     # -- episode helpers -------------------------------------------------
 
     def task_dir(self, project_id: str, task_id: str) -> Path:
-        return self.repo_root / "projects" / project_id / "episodes" / task_id
+        """ADR-B007 PR 2: reads AND writes resolve through the task's lane
+        WORKTREE when it exists (active task), else the clone tree (closed/
+        merged tasks live on main). This is the union — lane-authoritative for
+        active work. With the lane present, the runtime writes state directly
+        into the worktree and TaskBranchCommitter's ferry collapses to a
+        no-op copy."""
+        rel = Path("projects") / project_id / "episodes" / task_id
+        lane = self.lanes_root / task_id
+        if lane.is_dir():
+            return lane / rel
+        return self.repo_root / rel
 
     def _read(self, task_dir: Path, name: str) -> dict:
         return yaml.safe_load((task_dir / name).read_text(encoding="utf-8"))

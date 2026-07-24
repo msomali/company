@@ -137,10 +137,18 @@ def test_missing_required_file_fails(world):
 
 
 def test_cli_exit_codes(world, capsys):
+    # filesystem-only fixture (no git tree) opts out of ref verification;
+    # the tracked-on-a-ref path is covered against real git in test_task_lane.
     root, task_id, td = world
-    assert ec.main([str(td)]) == 0
+    assert ec.main([str(td), "--no-verify-refs"]) == 0
     out = capsys.readouterr().out
     assert "complete" in out
+
+
+def test_cli_verify_refs_default_errors_outside_git_tree(world, capsys):
+    root, task_id, td = world
+    assert ec.main([str(td)]) == 1                 # verify-refs on by default
+    assert "not inside a git tree" in capsys.readouterr().out
 
 
 # -- ADR-B007 bound requirement: --check verifies attested gate records -------

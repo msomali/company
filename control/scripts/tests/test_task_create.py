@@ -173,16 +173,45 @@ def _imports_of(module):
 
 
 def test_cli_exit_codes(sandbox, capsys):
+    # --no-commit-lane: filesystem unit path (the lane-commit default is
+    # covered against real git in test_task_create_lane).
     good = envelope_file(sandbox, VALID)
-    assert tc.main([str(good)]) == 0
+    assert tc.main([str(good), "--no-commit-lane"]) == 0
     assert "TASK-001" in capsys.readouterr().out
     bad = copy.deepcopy(VALID)
     del bad["objective"]
     bad_file = sandbox / "bad.yaml"
     bad_file.write_text(yaml.safe_dump(bad))
-    assert tc.main([str(bad_file)]) == 2
+    assert tc.main([str(bad_file), "--no-commit-lane"]) == 2
     out = capsys.readouterr().out
     assert "REJECTED" in out and "objective" in out
+
+
+def test_cli_commit_lane_is_the_default(sandbox, monkeypatch, capsys):
+    """Running the tool with no flags takes the commit-lane path (ruling b).
+    Proven by a spy TaskLane that records the commit instead of touching
+    /srv/company/lanes."""
+    captured = {}
+
+    class SpyLane:
+        def __init__(self, repo_root, branch, lanes_root):
+            captured["branch"] = branch
+
+        def commit_blobs(self, sources, message):
+            captured["sources"] = sources
+            captured["message"] = message
+            return "f" * 40
+
+    monkeypatch.setattr(tc.dp, "TaskLane", SpyLane)
+    monkeypatch.setattr(tc.dp, "DEFAULT_LANES_ROOT", sandbox / "lanes")
+    assert tc.main([str(envelope_file(sandbox, VALID))]) == 0
+    assert captured["branch"] == "dispatch/TASK-001"
+    assert set(captured["sources"]) == {
+        "projects/PROJECT-000/episodes/TASK-001/task.yaml",
+        "projects/PROJECT-000/episodes/TASK-001/state.yaml",
+    }
+    # no clone-tree episode was written (lane is the only home)
+    assert not (sandbox / "projects/PROJECT-000/episodes/TASK-001").exists()
 
 
 # -- --validate-record: post-creation records (owner finding, 2026-07-23) ----
